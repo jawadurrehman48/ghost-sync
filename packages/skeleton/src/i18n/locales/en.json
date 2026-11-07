@@ -1,3 +1,1 @@
-{
-  "welcome": "Welcome to Ghost Sync"
-}
+{"welcome": "Welcome to Ghost Sync", "sync": {"synced": "Synced", "pending": "{{count}} pending", "syncing": "Syncing", "offline": "Offline", "error": "Error"}, "language": {"toggleLabel": "Switch language", "english": "English", "urdu": "اردو"}}
