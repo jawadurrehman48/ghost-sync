@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Translation checker",
+      "description": "When any en.json or ur.json file is saved, check that both files have exactly the same keys. If any key is missing from either file, list the missing keys and add a translation for them.",
+      "enabled": true,
+      "trigger": "PostFileSave",
+      "matcher": "(en|ur)\\.json$",
+      "action": {
+        "type": "agent",
+        "prompt": "A translation file (en.json or ur.json) was just saved. Check both translation files at packages/skeleton/src/i18n/locales/en.json and packages/skeleton/src/i18n/locales/ur.json.\n\n1. Compare ALL keys (including nested keys) in both files.\n2. If both files have exactly the same keys, say 'Translation keys are in sync ✓' and stop.\n3. If any key is missing from either file:\n   a. List every missing key with the file it is missing from.\n   b. Add the missing key(s) to the appropriate file with a proper translation — English text for en.json, and accurate Urdu text for ur.json.\n   c. Save the updated file(s).\n4. After fixing, confirm that both files are now in sync."
+      }
+    }
+  ]
+}

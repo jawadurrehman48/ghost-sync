@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Auto-test the skeleton",
+      "description": "When any file in packages/skeleton/src is saved, run npm test. If any test fails, explain which test failed and why, and suggest a fix.",
+      "enabled": true,
+      "trigger": "PostFileSave",
+      "matcher": "packages/skeleton/src/",
+      "action": {
+        "type": "agent",
+        "prompt": "A file in packages/skeleton/src was just saved. Run `npm test` from the project root (d:\\hackthhon\\Kiro\\ghost-sync). If all tests pass, say so briefly. If any tests fail, do the following:\n1. Identify exactly which test(s) failed and their test names.\n2. Explain WHY each test failed — describe the root cause in plain English.\n3. Suggest a concrete fix for each failing test, showing the code change needed."
+      }
+    }
+  ]
+}
