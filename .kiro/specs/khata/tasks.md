@@ -118,3 +118,4 @@
 - [ ] 7.8 Run `npm run build` — skeleton compiles, Khata app builds with no TypeScript errors.
 
 - [ ] 7.9 Commit completed Khata app.
+

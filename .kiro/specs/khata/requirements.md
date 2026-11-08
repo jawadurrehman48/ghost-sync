@@ -322,3 +322,4 @@ payload: {
 **TR-9 Unit — entry reversal exclusion:** Tests SHALL verify that reversed entries are excluded from balance calculation and from the totals shown on the dashboard and reports screen.
 
 **TR-10 Unit — demo data integrity:** Tests SHALL verify that after loading demo data, all customers have valid balances (no NaN, no negative amounts where not expected) and at least one reversed entry exists.
+

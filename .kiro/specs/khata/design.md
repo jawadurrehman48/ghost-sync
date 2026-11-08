@@ -507,3 +507,4 @@ The existing `vitest.config.ts` (jsdom environment, fake-indexeddb) covers all t
 - WhatsApp and SMS reminders are URL strings — no SDK needed.
 - CSV export uses the browser `Blob` and `URL.createObjectURL` APIs — available offline.
 - Demo mode uses the same `store.add` API as real entries — no special paths.
+
