@@ -70,7 +70,7 @@ describe('i18n switching and RTL', () => {
 
   it('should translate skeleton keys in Urdu', () => {
     setLanguage('ur');
-    expect(i18n.t('sync.synced')).toBe('ہموار ہو گیا');
+    expect(i18n.t('sync.synced')).toBe('محفوظ ہو گیا');
     expect(i18n.t('sync.offline')).toBe('آف لائن');
   });
 

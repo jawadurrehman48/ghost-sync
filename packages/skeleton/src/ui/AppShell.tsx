@@ -19,6 +19,8 @@ export interface AppShellProps {
  * content area for the app's screens.
  *
  * Mobile-first, targeting screens as small as 360px.
+ * On desktop, the content is constrained to a phone-width column
+ * (max-w-md) centered on the page with a neutral background.
  * Uses Tailwind logical properties (ps, pe, ms, me) for RTL support.
  */
 export function AppShell({
@@ -30,29 +32,31 @@ export function AppShell({
   onToggleLanguage,
 }: AppShellProps) {
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
-      {/* Sticky header */}
-      <header className="sticky top-0 z-10 flex h-14 items-center justify-between bg-white ps-4 pe-4 shadow-sm">
-        {/* App name */}
-        <h1 className="truncate text-lg font-semibold text-gray-900">
-          {appName}
-        </h1>
+    <div className="min-h-screen bg-gray-200">
+      <div className="mx-auto flex min-h-screen max-w-md flex-col bg-gray-50 shadow-lg">
+        {/* Sticky header */}
+        <header className="sticky top-0 z-10 flex h-14 items-center justify-between bg-white ps-4 pe-4 shadow-sm">
+          {/* App name */}
+          <h1 className="truncate text-lg font-semibold text-gray-900">
+            {appName}
+          </h1>
 
-        {/* Right cluster: sync badge + language toggle */}
-        <div className="flex items-center gap-2">
-          {syncStatus && (
-            <SyncStatusBadge status={syncStatus} onClick={onSyncNow} />
-          )}
-          {language && onToggleLanguage && (
-            <LanguageToggle language={language} onToggle={onToggleLanguage} />
-          )}
-        </div>
-      </header>
+          {/* Right cluster: sync badge + language toggle */}
+          <div className="flex items-center gap-2">
+            {syncStatus && (
+              <SyncStatusBadge status={syncStatus} onClick={onSyncNow} />
+            )}
+            {language && onToggleLanguage && (
+              <LanguageToggle language={language} onToggle={onToggleLanguage} />
+            )}
+          </div>
+        </header>
 
-      {/* Scrollable content */}
-      <main className="flex-1 overflow-y-auto p-4">
-        {children}
-      </main>
+        {/* Scrollable content */}
+        <main className="flex-1 overflow-y-auto p-4">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

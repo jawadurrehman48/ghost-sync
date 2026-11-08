@@ -13,3 +13,17 @@ body {
   line-height: 1.5;
   font-weight: 400;
 }
+
+/* Urdu font — applied only when RTL is active (language = ur) */
+html[dir="rtl"] {
+  font-family: 'Noto Nastaliq Urdu', Inter, system-ui, serif;
+  line-height: 2.2;
+}
+
+html[dir="rtl"] button,
+html[dir="rtl"] input,
+html[dir="rtl"] select,
+html[dir="rtl"] textarea {
+  font-family: 'Noto Nastaliq Urdu', Inter, system-ui, serif;
+  line-height: 1.8;
+}
