@@ -33,7 +33,7 @@ Store all money as integer paisa (1 rupee = 100 paisa). Never use floats for mon
 
 ### Internationalization
 
-Every user-facing string uses i18n keys defined in both `en.json` and `ur.json`. Skeleton-level keys (sync status, language toggle) are in `packages/skeleton/src/i18n/locales/`. App-specific keys are registered via `registerAppTranslations()` at app startup. Skeleton keys take precedence — app keys cannot overwrite them.
+Every user-facing string uses i18n keys defined in both `en.json` and `ur.json`. Skeleton-level keys (sync status, language toggle) are in `packages/skeleton/src/i18n/locales/`. App-specific keys are registered via `registerAppTranslations()` at app startup. Skeleton keys take precedence — app keys cannot overwrite them. Apps use `useTranslation` re-exported from `@skeleton/core`; they never import `react-i18next` or `i18next` directly. Numeric inputs accept Urdu digits (use `parseWholeRupees`, `normalizePhone`). Dates are local calendar dates (`todayISO()`), never `toISOString().slice(0, 10)`, which gives the UTC day.
 
 ### RTL and Tailwind
 
