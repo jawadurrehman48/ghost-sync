@@ -6,6 +6,7 @@ import {
   getOrCreateDeviceId,
   type Store,
   type SyncedRow,
+  type TypedDexie,
 } from '@skeleton/core';
 
 // Test collection types
@@ -14,7 +15,7 @@ interface TestCollections {
   notes: { text: string };
 }
 
-let db: Dexie;
+let db: TypedDexie<TestCollections>;
 let store: Store<TestCollections>;
 
 function setup(dbName: string): void {
@@ -22,7 +23,7 @@ function setup(dbName: string): void {
     dbName,
     collections: { items: undefined, notes: undefined },
   });
-  store = createStore(db as any, getOrCreateDeviceId());
+  store = createStore(db, getOrCreateDeviceId());
 }
 
 describe('Store', () => {

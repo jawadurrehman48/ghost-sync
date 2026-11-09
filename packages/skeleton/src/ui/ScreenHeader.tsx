@@ -8,7 +8,8 @@ export interface ScreenHeaderProps {
 
 /**
  * Screen title with an optional back button (44x44px). The chevron mirrors
- * automatically in RTL layouts.
+ * automatically in RTL layouts. Long titles wrap onto two lines instead of
+ * being cut off.
  */
 export function ScreenHeader({ title, onBack, backLabel }: ScreenHeaderProps) {
   return (
@@ -18,7 +19,7 @@ export function ScreenHeader({ title, onBack, backLabel }: ScreenHeaderProps) {
           type="button"
           onClick={onBack}
           aria-label={backLabel}
-          className="inline-flex h-11 min-h-[44px] w-11 min-w-[44px] shrink-0 items-center justify-center rounded-full bg-white text-gray-700 shadow-sm hover:bg-gray-100"
+          className="inline-flex h-11 min-h-[44px] w-11 min-w-[44px] shrink-0 items-center justify-center rounded-full bg-white text-gray-700 shadow-sm transition-colors hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
         >
           <svg
             viewBox="0 0 24 24"
@@ -34,7 +35,7 @@ export function ScreenHeader({ title, onBack, backLabel }: ScreenHeaderProps) {
           </svg>
         </button>
       )}
-      <h2 className="min-w-0 flex-1 truncate text-xl font-bold text-gray-900">{title}</h2>
+      <h2 className="line-clamp-2 min-w-0 flex-1 break-words text-xl font-bold text-gray-900">{title}</h2>
     </div>
   );
 }

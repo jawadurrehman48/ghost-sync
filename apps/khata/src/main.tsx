@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { registerAppTranslations } from '@skeleton/core';
+import { ErrorBoundary, registerAppTranslations } from '@skeleton/core';
 import en from './i18n/en.json';
 import ur from './i18n/ur.json';
 import './index.css';
@@ -12,6 +12,8 @@ registerAppTranslations({ en, ur });
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 );

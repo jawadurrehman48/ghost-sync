@@ -323,3 +323,25 @@ payload: {
 
 **TR-10 Unit — demo data integrity:** Tests SHALL verify that after loading demo data, all customers have valid balances (no NaN, no negative amounts where not expected) and at least one reversed entry exists.
 
+
+---
+
+## Addendum: submission polish (added after the first release)
+
+These requirements were added during the final polish. All are implemented and tested.
+
+**FR-11 Clear all data.** Settings SHALL offer "Clear all data" as a danger action. It SHALL require confirmation in a dialog that warns the action cannot be undone, with Cancel focused first. Confirming SHALL erase every record on the device (and the mock cloud copy) and return the app to its empty state.
+
+**FR-12 Quick entry.** The Dashboard and Customers screens SHALL show a floating "+" button that opens a flow to search and pick a customer, choose Credit Given or Payment Received, enter the amount and save. The button SHALL sit above the bottom navigation, at the end side (right in English, left in Urdu).
+
+**FR-13 Dashboard owing count.** The dashboard SHALL show, under Total Outstanding, how many customers owe money (singular and plural forms in both languages, or "Everyone is settled").
+
+**FR-14 Report ranges, chart and breakdown.** Reports SHALL offer Today / This Week (Monday to Sunday) / This Month buttons, a dependency-free SVG bar chart of credit vs payments per day, and a per-customer breakdown for the selected range. Chart buckets and breakdown rows SHALL add up exactly to the report totals.
+
+**FR-15 Demo data is idempotent.** Loading demo data SHALL add it at most once: if it already exists (on this device, or synced from another), nothing is added and the user is told. A rapid double tap SHALL NOT duplicate it. Demo data SHALL contain about 8 customers with common Pakistani names, realistic amounts, entries over the last 30 days, one reversed entry, one fully settled customer and one advance.
+
+**FR-16 Input safety.** The app SHALL never crash or show a wrong balance for: empty, zero, negative, fractional or very large amounts (accepted range Rs 1 to Rs 999,999,999); corrupt stored amounts (ignored); duplicate customer names (allowed, but the same name AND phone is refused); invalid phones; very long names, notes and reasons (length limits); reversing an entry twice; reversing a reversal (no effect); and a double tap on any save (only one record).
+
+**FR-17 Presentation.** Phone numbers SHALL be displayed as `0300-1234567` and stored unformatted. Every screen SHALL have a friendly empty state with an action, a loading state and clear error messages. A rendering crash SHALL show a translated recovery message, not a blank screen.
+
+**NFR-9 Offline font.** The Urdu font SHALL be bundled with the app and precached by the service worker, so Urdu renders correctly offline after the first visit.

@@ -1,18 +1,21 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import Dexie from 'dexie';
-import { createDatabase, createStore, todayISO, validatePakistaniPhone } from '@skeleton/core';
-import type { Store } from '@skeleton/core';
-import { deriveAll, deriveBalance } from '../apps/khata/src/khata.reducers';
-import { loadDemoData } from '../apps/khata/src/utils/demo';
+import { addDays, createDatabase, createStore, todayISO, validatePakistaniPhone } from '@skeleton/core';
+import type { Store, TypedDexie } from '@skeleton/core';
+import { deriveAll, deriveBalance, deriveSettings } from '../apps/khata/src/khata.reducers';
+import { DEMO_CUSTOMERS, DEMO_SHOP_NAME, loadDemoData } from '../apps/khata/src/utils/demo';
 import type { KhataCollections, KhataData } from '../apps/khata/src/khata.types';
 
-const DB_NAME = `khata-demo-test-${Date.now()}`;
+const COLLECTIONS = {
+  customerCreated: undefined,
+  customerUpdated: undefined,
+  creditGiven: undefined,
+  paymentReceived: undefined,
+  entryReversed: undefined,
+  settingsUpdated: undefined,
+};
 
-let db: ReturnType<typeof createDatabase<KhataCollections>>;
-let store: Store<KhataCollections>;
-let data: KhataData;
-
-async function snapshot(): Promise<KhataData> {
+async function snapshot(store: Store<KhataCollections>): Promise<KhataData> {
   return {
     customerCreated: await store.query('customerCreated'),
     customerUpdated: await store.query('customerUpdated'),
@@ -23,42 +26,61 @@ async function snapshot(): Promise<KhataData> {
   };
 }
 
+const opened: Array<{ db: TypedDexie<KhataCollections>; name: string }> = [];
+/** `track` = close and delete the database automatically after each test. */
+function freshStore(track = true): { store: Store<KhataCollections>; db: TypedDexie<KhataCollections> } {
+  const name = `khata-demo-test-${Date.now()}-${Math.random()}`;
+  const db = createDatabase<KhataCollections>({ dbName: name, collections: COLLECTIONS });
+  if (track) opened.push({ db, name });
+  return { store: createStore(db, 'demo-test-device'), db };
+}
+
+afterEach(async () => {
+  while (opened.length > 0) {
+    const { db, name } = opened.pop()!;
+    db.close();
+    await Dexie.delete(name);
+  }
+});
+
 describe('Demo data (TR-10)', () => {
+  let data: KhataData;
+  let store: Store<KhataCollections>;
+  let cleanup: () => Promise<void>;
+
   beforeAll(async () => {
-    db = createDatabase<KhataCollections>({
-      dbName: DB_NAME,
-      collections: {
-        customerCreated: undefined,
-        customerUpdated: undefined,
-        creditGiven: undefined,
-        paymentReceived: undefined,
-        entryReversed: undefined,
-        settingsUpdated: undefined,
-      },
-    });
-    store = createStore(db, 'demo-test-device');
-    await loadDemoData(store);
-    data = await snapshot();
+    const created = freshStore(false); // shared by every test below; cleaned up in afterAll
+    store = created.store;
+    expect(await loadDemoData(store)).toBe('loaded');
+    data = await snapshot(store);
+    cleanup = async () => {
+      created.db.close();
+      await Dexie.delete(created.db.name);
+    };
   });
 
   afterAll(async () => {
-    db.close();
-    await Dexie.delete(DB_NAME);
+    await cleanup();
   });
 
-  it('adds at least 5 customers with names, and any phone numbers are valid Pakistani numbers', () => {
-    expect(data.customerCreated.length).toBeGreaterThanOrEqual(5);
+  it('adds 8 customers with common Pakistani names; every phone is a valid number, stored unformatted', () => {
+    expect(data.customerCreated).toHaveLength(8);
+    const names = data.customerCreated.map((c) => c.payload.name);
+    expect(names).toEqual(expect.arrayContaining(['Muhammad Aslam', 'Rukhsana Bibi', 'Imran Hussain', 'Ayesha Siddiqui']));
+    expect(new Set(names).size).toBe(8);
     for (const c of data.customerCreated) {
-      expect(c.payload.name.trim()).not.toBe('');
-      if (c.payload.phone) expect(validatePakistaniPhone(c.payload.phone)).toBe(true);
+      if (c.payload.phone) {
+        expect(validatePakistaniPhone(c.payload.phone)).toBe(true);
+        expect(c.payload.phone).toMatch(/^03\d{9}$/);
+      }
     }
+    expect(data.customerCreated.some((c) => !c.payload.phone)).toBe(true); // one customer without a phone
   });
 
   it('every customer has a valid numeric balance (no NaN, always an integer)', () => {
     const derived = deriveAll(data, todayISO());
     for (const customer of derived.customers) {
       const balance = derived.balances.get(customer.id) ?? 0;
-      expect(Number.isNaN(balance)).toBe(false);
       expect(Number.isInteger(balance)).toBe(true);
       expect(deriveBalance(data.creditGiven, data.paymentReceived, data.entryReversed, customer.id).balancePaisa).toBe(
         balance,
@@ -66,64 +88,72 @@ describe('Demo data (TR-10)', () => {
     }
   });
 
-  it('every transaction has a positive whole-paisa amount, a valid date and a known customer', () => {
-    const ids = new Set(data.customerCreated.map((c) => c.id));
-    for (const t of [...data.creditGiven, ...data.paymentReceived]) {
-      expect(Number.isInteger(t.payload.amountPaisa)).toBe(true);
-      expect(t.payload.amountPaisa).toBeGreaterThan(0);
-      expect(t.payload.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-      expect(ids.has(t.payload.customerId)).toBe(true);
+  it('uses realistic whole-rupee amounts, including familiar ones like Rs 1,250, Rs 3,480 and Rs 650', () => {
+    const amounts = [...data.creditGiven, ...data.paymentReceived].map((t) => t.payload.amountPaisa);
+    for (const a of amounts) {
+      expect(Number.isInteger(a)).toBe(true);
+      expect(a % 100).toBe(0);
+      expect(a).toBeGreaterThan(0);
     }
+    expect(amounts).toEqual(expect.arrayContaining([125000, 348000, 65000]));
   });
 
-  it('has multiple transactions for most customers', () => {
-    const perCustomer = new Map<string, number>();
-    for (const t of [...data.creditGiven, ...data.paymentReceived]) {
-      perCustomer.set(t.payload.customerId, (perCustomer.get(t.payload.customerId) ?? 0) + 1);
+  it('spreads entries over the last 30 days, up to and including today', () => {
+    const today = todayISO();
+    const oldest = addDays(today, -29);
+    const dates = [...data.creditGiven, ...data.paymentReceived].map((t) => t.payload.date);
+    for (const d of dates) {
+      expect(d >= oldest && d <= today).toBe(true);
     }
-    const withMultiple = [...perCustomer.values()].filter((n) => n >= 2).length;
-    expect(withMultiple).toBeGreaterThanOrEqual(5);
+    expect(new Set(dates).size).toBeGreaterThan(15); // genuinely spread out
+    expect(dates).toContain(today); // so the dashboard "today" figures are never empty
   });
 
-  it('includes at least one reversed entry that points at a real transaction', () => {
-    expect(data.entryReversed.length).toBeGreaterThanOrEqual(1);
-    const transactionIds = new Set([...data.creditGiven, ...data.paymentReceived].map((t) => t.id));
-    for (const r of data.entryReversed) {
-      expect(transactionIds.has(r.payload.entryId)).toBe(true);
-      expect(r.payload.reason.trim()).not.toBe('');
-    }
+  it('includes exactly one reversed entry, pointing at a real credit, with a reason', () => {
+    expect(data.entryReversed).toHaveLength(1);
+    const reversal = data.entryReversed[0];
+    expect(reversal.payload.reason.trim()).not.toBe('');
+    const target = data.creditGiven.find((c) => c.id === reversal.payload.entryId);
+    expect(target?.payload.amountPaisa).toBe(300000);
   });
 
-  it('has varied balances: someone owing, someone settled, someone in advance', () => {
-    const { customers, balances } = deriveAll(data, todayISO());
-    const values = customers.map((c) => balances.get(c.id) ?? 0);
-    expect(values.some((b) => b > 0)).toBe(true);
-    expect(values.some((b) => b === 0)).toBe(true);
-    expect(values.some((b) => b < 0)).toBe(true);
-  });
-
-  it('produces the exact expected balances', () => {
+  it('produces the exact expected balances: owing, one fully settled, one advance', () => {
     const { customers, balances } = deriveAll(data, todayISO());
     const byName = Object.fromEntries(customers.map((c) => [c.name, balances.get(c.id)]));
     expect(byName).toEqual({
-      'Ahmed Ali': 800000,
-      'Bilal Khan': 400000,
-      'Sara Begum': 0,
-      'Fatima Noor': -200000,
-      'Tariq Mehmood': 150000,
+      'Muhammad Aslam': 288000,
+      'Rukhsana Bibi': 204000,
+      'Imran Hussain': 473000,
+      'Ayesha Siddiqui': 0,
+      'Zahid Mehmood': 250000, // Rs 3,000 typo reversed, Rs 300 re-entered
+      'Naseem Akhtar': -50000,
+      'Shabana Kausar': 118000,
+      'Tariq Javed': 239000,
     });
+    const values = Object.values(byName) as number[];
+    expect(values.filter((b) => b === 0)).toHaveLength(1);
+    expect(values.filter((b) => b < 0)).toHaveLength(1);
   });
 
-  it("fills in the dashboard: outstanding total, today's figures and top debtors", () => {
+  it("fills in the dashboard: outstanding total, owing count, today's figures and top 5 debtors", () => {
     const { dashboard } = deriveAll(data, todayISO());
-    expect(dashboard.totalOutstandingPaisa).toBe(800000 + 400000 + 150000);
-    expect(dashboard.creditTodayPaisa).toBeGreaterThan(0);
-    expect(dashboard.paymentsTodayPaisa).toBeGreaterThan(0);
-    expect(dashboard.topDebtors.map((d) => d.name)).toEqual(['Ahmed Ali', 'Bilal Khan', 'Tariq Mehmood']);
+    expect(dashboard.totalOutstandingPaisa).toBe(1_572_000);
+    expect(dashboard.customersOwingCount).toBe(6);
+    expect(dashboard.creditTodayPaisa).toBe(109000); // Rs 450 + Rs 640
+    expect(dashboard.paymentsTodayPaisa).toBe(50000);
+    expect(dashboard.topDebtors.map((d) => d.name)).toEqual([
+      'Imran Hussain',
+      'Muhammad Aslam',
+      'Zahid Mehmood',
+      'Tariq Javed',
+      'Rukhsana Bibi',
+    ]);
   });
 
-  it('sets a shop name', () => {
-    expect(data.settingsUpdated.some((s) => s.payload.shopName)).toBe(true);
+  it('sets the shop name and records the demo marker', () => {
+    const settings = deriveSettings(data.settingsUpdated);
+    expect(settings.shopName).toBe(DEMO_SHOP_NAME);
+    expect(settings.demoDataLoaded).toBe(true);
   });
 
   it('is written through the append-only store, so every record is pending sync', async () => {
@@ -135,5 +165,54 @@ describe('Demo data (TR-10)', () => {
       data.entryReversed.length +
       data.settingsUpdated.length;
     expect(pending).toHaveLength(total);
+  });
+});
+
+describe('Demo data can only be loaded once', () => {
+  it('pressing it twice does not add duplicate customers or transactions', async () => {
+    const { store } = freshStore();
+    expect(await loadDemoData(store)).toBe('loaded');
+    const after1 = await snapshot(store);
+
+    expect(await loadDemoData(store)).toBe('alreadyLoaded');
+    expect(await loadDemoData(store)).toBe('alreadyLoaded');
+    const after3 = await snapshot(store);
+
+    expect(after3.customerCreated).toHaveLength(DEMO_CUSTOMERS.length);
+    for (const key of Object.keys(after1) as Array<keyof KhataData>) {
+      expect(after3[key].map((r) => r.id)).toEqual(after1[key].map((r) => r.id));
+    }
+  });
+
+  it('several overlapping calls (a rapid double tap) still add the data exactly once', async () => {
+    const { store } = freshStore();
+    const results = await Promise.all([loadDemoData(store), loadDemoData(store), loadDemoData(store)]);
+    expect(results.every((r) => r === 'loaded')).toBe(true);
+    const data = await snapshot(store);
+    expect(data.customerCreated).toHaveLength(DEMO_CUSTOMERS.length);
+    expect(data.entryReversed).toHaveLength(1);
+    expect(data.settingsUpdated.filter((s) => s.payload.demoDataLoaded)).toHaveLength(1);
+  });
+
+  it('a second store (another device after sync) that already has the marker adds nothing', async () => {
+    const { store } = freshStore();
+    await store.add('settingsUpdated', { demoDataLoaded: true });
+    expect(await loadDemoData(store)).toBe('alreadyLoaded');
+    expect((await snapshot(store)).customerCreated).toHaveLength(0);
+  });
+
+  it('does not overwrite a shop name the owner already chose', async () => {
+    const { store } = freshStore();
+    await store.add('settingsUpdated', { shopName: 'Bismillah Kiryana' });
+    await loadDemoData(store);
+    expect(deriveSettings(await store.query('settingsUpdated')).shopName).toBe('Bismillah Kiryana');
+  });
+
+  it('can be loaded again after all data was cleared (the marker is cleared with it)', async () => {
+    const { store, db } = freshStore();
+    await loadDemoData(store);
+    await Promise.all(db.tables.map((t) => t.clear()));
+    expect(await loadDemoData(store)).toBe('loaded');
+    expect((await snapshot(store)).customerCreated).toHaveLength(DEMO_CUSTOMERS.length);
   });
 });

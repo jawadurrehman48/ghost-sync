@@ -1,0 +1,93 @@
+/*
+ * Shared Ghost Sync theme. Import it from an app's index.css, right after Tailwind:
+ *
+ *   @import "tailwindcss";
+ *   @import "../../../packages/skeleton/src/theme.css";
+ *   @source "../../../packages/skeleton/src";
+ *
+ * To rebrand an app, override the --color-brand-* tokens in its own @theme block
+ * after the import. Skeleton components only ever use the brand-* colour names.
+ */
+
+/* Urdu font, bundled (not loaded from Google), so it is precached and works offline. */
+@import "@fontsource-variable/noto-nastaliq-urdu/index.css";
+
+@theme {
+  /* Default brand: indigo. Never red or green: those two colours mean "owed" and "received". */
+  --color-brand-50: #eef2ff;
+  --color-brand-100: #e0e7ff;
+  --color-brand-200: #c7d2fe;
+  --color-brand-600: #4f46e5;
+  --color-brand-700: #4338ca;
+  --color-brand-800: #3730a3;
+
+  --animate-fade-in: fade-in 160ms ease-out both;
+  --animate-pop-in: pop-in 160ms ease-out both;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * Urdu (right-to-left). Nastaliq script has tall, deep strokes, so every text
+ * element gets generous line height (this also beats Tailwind's text-sm/text-xs
+ * line heights, which would clip the script, especially inside .truncate).
+ */
+html[dir='rtl'],
+html[dir='rtl'] body {
+  /* body sets its own font-family above, so it must be targeted explicitly or Urdu never gets the font */
+  font-family: 'Noto Nastaliq Urdu Variable', 'Noto Naskh Arabic', 'Segoe UI', Tahoma, serif;
+}
+
+html[dir='rtl'] body *:not(svg):not(path):not(rect):not(circle):not(line):not(text) {
+  line-height: 2;
+}
+
+html[dir='rtl'] input,
+html[dir='rtl'] textarea,
+html[dir='rtl'] button {
+  font-family: inherit;
+}
+
+/* Respect people who turn animations off. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

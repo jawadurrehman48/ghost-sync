@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
-import { ScreenHeader, useTranslation } from '@skeleton/core';
+import { Button, Card, EmptyState, ScreenHeader, TextField, formatPhone, useTranslation } from '@skeleton/core';
 import { Money, balanceStatusKey } from '../components/Money';
-import { card, input, mutedText, primaryButton } from '../components/styles';
+import { CustomersIcon } from '../components/NavIcons';
 import { filterCustomers } from '../khata.reducers';
 import type { ScreenProps } from './types';
 
@@ -19,58 +19,66 @@ export function CustomerListScreen({ derived, navigate }: ScreenProps) {
     [derived.customers, derived.balances, query],
   );
 
+  const addCustomer = () => navigate({ name: 'addCustomer' });
+
   return (
     <div className="space-y-4">
       <ScreenHeader title={t('khata.customers.title')} />
 
-      <button type="button" onClick={() => navigate({ name: 'addCustomer' })} className={primaryButton}>
-        {t('khata.customers.addButton')}
-      </button>
-
-      <div>
-        <label htmlFor="customer-search" className="sr-only">
-          {t('khata.customers.search')}
-        </label>
-        <input
-          id="customer-search"
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={t('khata.customers.search')}
-          autoComplete="off"
-          className={input}
-        />
-      </div>
-
       {derived.customers.length === 0 ? (
-        <p className={`${card} ${mutedText}`}>{t('khata.customers.emptyState')}</p>
-      ) : rows.length === 0 ? (
-        <p className={`${card} ${mutedText}`}>{t('khata.customers.noResults')}</p>
+        <EmptyState
+          icon={<CustomersIcon />}
+          title={t('khata.customers.emptyTitle')}
+          description={t('khata.customers.emptyState')}
+          actionLabel={t('khata.customers.addButton')}
+          onAction={addCustomer}
+        />
       ) : (
-        <ul className="space-y-2">
-          {rows.map(({ customer, balancePaisa }) => (
-            <li key={customer.id}>
-              <button
-                type="button"
-                onClick={() => navigate({ name: 'customerDetail', customerId: customer.id })}
-                className={`${card} flex min-h-[64px] w-full items-center justify-between gap-3 text-start hover:bg-gray-50`}
-              >
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-base font-medium text-gray-900">{customer.name}</span>
-                  {customer.phone ? (
-                    <span dir="ltr" className="block truncate text-start text-sm text-gray-600">
-                      {customer.phone}
+        <>
+          <Button onClick={addCustomer}>{t('khata.customers.addButton')}</Button>
+
+          <TextField
+            label={t('khata.customers.search')}
+            hideLabel
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t('khata.customers.search')}
+            autoComplete="off"
+          />
+
+          {rows.length === 0 ? (
+            <EmptyState
+              title={t('khata.customers.noResults')}
+              description={t('khata.customers.noResultsHint')}
+              actionLabel={t('khata.customers.addButton')}
+              onAction={addCustomer}
+            />
+          ) : (
+            <ul className="space-y-2">
+              {rows.map(({ customer, balancePaisa }) => (
+                <li key={customer.id}>
+                  <Card onClick={() => navigate({ name: 'customerDetail', customerId: customer.id })}>
+                    <span className="flex items-center justify-between gap-3">
+                      <span className="min-w-0 flex-1">
+                        <span className="block break-words text-base font-medium text-gray-900">{customer.name}</span>
+                        {customer.phone ? (
+                          <span dir="ltr" className="block text-start text-sm text-gray-600">
+                            {formatPhone(customer.phone)}
+                          </span>
+                        ) : null}
+                      </span>
+                      <span className="flex shrink-0 flex-col items-end">
+                        <Money paisa={balancePaisa} tone="balance" size="lg" />
+                        <span className="text-xs text-gray-600">{t(balanceStatusKey(balancePaisa))}</span>
+                      </span>
                     </span>
-                  ) : null}
-                </span>
-                <span className="flex shrink-0 flex-col items-end">
-                  <Money paisa={balancePaisa} tone="balance" className="text-lg" />
-                  <span className="text-xs text-gray-600">{t(balanceStatusKey(balancePaisa))}</span>
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
+                  </Card>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
     </div>
   );

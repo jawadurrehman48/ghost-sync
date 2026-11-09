@@ -1,197 +1,162 @@
 # @skeleton/core
 
-A reusable, app-agnostic foundation for offline-first PWAs that work on cheap Android phones with unreliable internet.
+The shared foundation for Ghost Sync apps: offline-first PWAs for cheap Android phones (about 360px wide) with unreliable internet, in English and Urdu.
 
-## What It Provides
+Everything an app needs is imported from one place:
 
-| Module | What You Get |
-|--------|-------------|
-| **storage** | Append-only local storage via Dexie/IndexedDB with typed records, UUIDs, timestamps, and a deviceId per device |
-| **sync** | Outbox queue, pluggable SyncAdapter, in-memory mock adapter, retry with backoff, online/offline auto-sync |
-| **hooks** | `useOnlineStatus` React hook for online/offline detection |
-| **i18n** | English/Urdu with RTL, persistent language selection, per-app translation registration |
-| **ui** | `AppShell`, `SyncStatusBadge`, `LanguageToggle` — mobile-first, RTL-aware Tailwind components |
+```ts
+import { createStore, AppShell, formatPaisa /* ... */ } from '@skeleton/core';
+```
 
-## Quick Start
+Apps never import `dexie`, `i18next` or `react-i18next` directly, never touch IndexedDB, and never call the network. `tests/khata.architecture.test.ts` enforces this for Khata.
 
-### 1. Define your record types
+## What's inside
 
-```typescript
-// types.ts in your app
+| Module | Exports |
+| --- | --- |
+| **storage** | `createDatabase`, `createStore` (append-only `add` / `query`), `deriveState`, `getOrCreateDeviceId`, `clearAllData` |
+| **sync** | `createSyncEngine`, `InMemorySyncAdapter`, `SyncAdapter` and `SyncableStore` types, `createSyncStatusStore` |
+| **i18n** | `registerAppTranslations`, `setLanguage`, `useLanguage`, `useTranslation`, `LANGUAGES`, `i18n` |
+| **utils** | money: `formatPaisa`, `paisaFromRupees`, `parseWholeRupees` · phone: `validatePakistaniPhone`, `normalizePhone`, `formatPhone` · dates: `todayISO`, `toISODate`, `isValidISODate`, `formatDateDMY`, `addDays`, `daysBetween`, `weekRange`, `monthRange` · `toAsciiDigits` |
+| **hooks** | `useStoreSnapshot`, `useSubmitGuard`, `useOnlineStatus` |
+| **ui** | `AppShell`, `BottomNav`, `ScreenHeader`, `Button`, `Card`, `TextField`, `TextAreaField`, `ConfirmDialog`, `EmptyState`, `FloatingActionButton`, `Notice`, `LoadingState`, `Spinner`, `ErrorBoundary`, `GroupedBarChart`, `SyncStatusBadge`, `LanguageToggle` |
+| **theme** | `src/theme.css`: brand colour tokens, bundled offline Urdu font, Urdu line-height, animations, reduced-motion support |
+
+## Build a new app in six steps
+
+### 1. Styles: import the theme
+
+```css
+/* apps/my-app/src/index.css */
+@import "tailwindcss";
+@import "../../../packages/skeleton/src/theme.css";
+@source "../../../packages/skeleton/src";
+
+/* optional: your own brand colour (never red or green, which mean money owed and received) */
+@theme {
+  --color-brand-600: #0f766e;
+  --color-brand-700: #115e59;
+}
+```
+
+The theme bundles the **Noto Nastaliq Urdu** font, so add `woff2` to your PWA precache (`globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}']`) and Urdu works offline.
+
+### 2. Define your record types
+
+```ts
 export type AppCollections = {
-  customers: { name: string; phone: string };
-  transactions: { customerId: string; amount: number }; // amount in paisa
+  patientAdded: { name: string; phone?: string };
+  tokenIssued: { patientId: string; number: number; date: string };
+  tokenCancelled: { tokenId: string; reason: string }; // fix mistakes by appending, never editing
 };
 ```
 
-Use `type` not `interface` so the generic constraints resolve cleanly.
+Use `type` (not `interface`) so the generics resolve cleanly.
 
-### 2. Write a reducer to derive state
+### 3. Create the database, store and sync engine
 
-```typescript
+```ts
+import { createDatabase, createStore, createSyncEngine, getOrCreateDeviceId, InMemorySyncAdapter } from '@skeleton/core';
+
+export const db = createDatabase<AppCollections>({
+  dbName: 'my-app',
+  collections: { patientAdded: undefined, tokenIssued: undefined, tokenCancelled: undefined },
+});
+export const store = createStore(db, getOrCreateDeviceId());
+export const engine = createSyncEngine({ adapter: new InMemorySyncAdapter(), store });
+```
+
+### 4. Derive state with pure functions
+
+```ts
 import { deriveState, type SkeletonRecord } from '@skeleton/core';
 
-// Derive a customer's balance from their transaction records
-function balanceReducer(state: number | undefined, record: SkeletonRecord<{ customerId: string; amount: number }>) {
-  return (state ?? 0) + record.payload.amount;
-}
-
-const records = await store.query('transactions');
-const balance = deriveState(records, balanceReducer, 0);
+const cancelled = new Set(cancellations.map((c) => c.payload.tokenId));
+const waiting = deriveState(tokens, (count = 0, t) => (cancelled.has(t.id) ? count : count + 1), 0);
 ```
 
-### 3. Initialize storage and sync
+Keep these functions pure and give them property-based tests. Sync may deliver records in any order, so sort by a total order (`createdAt`, then `id`) before folding.
 
-```typescript
-import {
-  createDatabase, createStore, getOrCreateDeviceId,
-  createSyncEngine, InMemorySyncAdapter,
-} from '@skeleton/core';
+### 5. Register translations
 
-const deviceId = getOrCreateDeviceId();
-const db = createDatabase<AppCollections>({
-  dbName: 'my-app',
-  collections: { customers: undefined, transactions: undefined },
-});
-const store = createStore(db, deviceId);
-
-const adapter = new InMemorySyncAdapter(); // swap with Supabase adapter later
-const engine = createSyncEngine({ adapter, store });
-
-// Start auto-sync on online/offline events
-engine.start();
-```
-
-### 4. Register your translations
-
-```typescript
+```ts
 import { registerAppTranslations } from '@skeleton/core';
+import en from './i18n/en.json';
+import ur from './i18n/ur.json';
 
-registerAppTranslations({
-  en: { 'app.title': 'My App', 'app.addCustomer': 'Add Customer' },
-  ur: { 'app.title': 'میری ایپ', 'app.addCustomer': 'گاہک شامل کریں' },
-});
+registerAppTranslations({ en, ur }); // before the first render
 ```
 
-Skeleton keys (sync status, language) are already included. Your app keys merge on top without overwriting skeleton keys.
+Put your keys under an app prefix (for example `clinic.`). Skeleton keys (`sync.*`, `language.*`, `error.*`, `loading`) are already included, and app keys cannot overwrite them.
 
-### 5. Use the AppShell
+### 6. Compose screens from the UI kit
 
 ```tsx
-import { AppShell, useLanguage, setLanguage } from '@skeleton/core';
+import {
+  AppShell, BottomNav, ErrorBoundary, FloatingActionButton, LoadingState,
+  useLanguage, setLanguage, useStoreSnapshot, useTranslation,
+} from '@skeleton/core';
 
 function App() {
+  const { t } = useTranslation();
   const { language } = useLanguage();
+  const { data, reload } = useStoreSnapshot(loadEverything, { engine }); // reloads after sync too
 
   return (
     <AppShell
-      appName="My App"
-      syncStatus={engine.getStatus()}
+      appName={t('clinic.appName')}
+      logo={<Logo />}
+      syncStatus={status}
       onSyncNow={() => engine.syncNow()}
       language={language}
       onToggleLanguage={() => setLanguage(language === 'en' ? 'ur' : 'en')}
     >
-      <YourScreens />
+      <div className="pb-32">{data ? <Screens data={data} onChanged={reload} /> : <LoadingState />}</div>
+      <FloatingActionButton label={t('clinic.newToken')} onClick={openNewToken} />
+      <BottomNav items={tabs} active={tab} onSelect={setTab} ariaLabel={t('clinic.menu')} />
     </AppShell>
   );
 }
 ```
 
-## Public API
+Wrap the root in `<ErrorBoundary>` (in `main.tsx`) so a bug shows a friendly, translated message instead of a blank screen.
 
-### Storage
+## The UI kit
 
-- `getOrCreateDeviceId()` — persistent UUID per device
-- `createDatabase(config)` — Dexie database factory
-- `createStore(db, deviceId)` — append-only store with `add`, `query`, plus sync-internal methods
-- `deriveState(records, reducer, initial?)` — fold records into derived state
+All components are mobile-first, use **logical** Tailwind classes only (`ms-`, `pe-`, `text-start`, ...), so they mirror automatically in Urdu, and keep interactive elements at **44px or more**.
 
-### Sync
+| Component | Use it for |
+| --- | --- |
+| `Button` | Every button. Variants `primary` (brand), `secondary`, `neutral`, `danger` (red), `dangerOutline`, `success` (green). `loading` disables it and shows a spinner. With `href` it renders a link (adds `noopener` for new tabs). |
+| `Card` | The one card style. Pass `onClick` to make the whole card a 56px button. `tone="muted"` for inactive items. |
+| `TextField`, `TextAreaField` | Labelled inputs with `error` / `hint` wired to `aria-describedby`. `size="lg"` gives the 56px amount field. |
+| `ConfirmDialog` | "Are you sure?" dialogs. Focus starts on Cancel, Tab stays inside, Escape or a tap outside cancels, `tone="danger"` makes the confirm button red. |
+| `EmptyState` | Friendly "nothing here yet" with an action button. |
+| `FloatingActionButton` | The round `+` above the bottom navigation, on the right in English and the left in Urdu. |
+| `Notice` | Inline messages: errors are announced at once (`role="alert"`), success and info politely. |
+| `LoadingState`, `Spinner` | Loading feedback with a translated label. |
+| `ErrorBoundary` | Catches render crashes; offers Try again / Reopen. |
+| `GroupedBarChart` | A small SVG bar chart with no chart library. Never draws NaN; stays left-to-right inside Urdu pages so dates read correctly. |
+| `AppShell`, `BottomNav`, `ScreenHeader` | The frame: a phone-width column centred on desktop, a header with logo, sync badge and language toggle, 56px tabs, and a title with an RTL-aware back button. |
 
-- `createSyncEngine(config)` — returns `{ syncNow, getStatus, subscribe, start, stop }`
-- `InMemorySyncAdapter` — mock adapter for dev/tests
-- `SyncAdapter` interface — implement for real backends (Supabase, etc.)
+## The helpers
 
-### i18n
-
-- `setLanguage(lng)` — switch between 'en' and 'ur'
-- `registerAppTranslations(translations)` — add app-specific keys
-- `useLanguage()` — React hook returning current language + setter
-
-### UI
-
-- `AppShell` — header (app name + sync badge + language toggle) + scrollable content
-- `SyncStatusBadge` — pill showing synced/pending/syncing/offline/error
-- `LanguageToggle` — button switching English ↔ Urdu
-
-## Testing
-
-The skeleton includes property-based tests (fast-check) proving sync convergence across multiple devices. Run:
-
-```bash
-npm test
+```ts
+formatPaisa(245050);                   // "Rs 2,450.50" (integer maths, identical on every device)
+parseWholeRupees('۲,۵۰۰');              // 2500 (Urdu digits, commas, spaces); null if invalid
+paisaFromRupees(2500);                 // 250000
+formatPhone('03001234567');            // "0300-1234567" (store unformatted, show formatted)
+validatePakistaniPhone('0300 1234567');// true
+todayISO();                            // the LOCAL date, e.g. "2026-11-07" (not the UTC day)
+weekRange();                           // { from: Monday, to: Sunday }
+monthRange();                          // { from: '2026-11-01', to: '2026-11-30' }
+addDays('2026-12-31', 1);              // "2027-01-01"
 ```
 
-## Shared utilities, hooks and shell components
+`useSubmitGuard()` returns `{ busy, run }`. Wrap every save in `run(...)`: in an append-only ledger, a double tap would otherwise record a real second entry.
 
-Anything two apps would both need lives here. Import all of it from `@skeleton/core`.
+`clearAllData(db)` erases every record on the phone in one transaction. It is meant only for an explicit "reset" behind a `ConfirmDialog`.
 
-### Formatting, validation and dates
+## Tests
 
-```typescript
-import {
-  formatPaisa, parseWholeRupees, paisaFromRupees,   // money
-  validatePakistaniPhone, normalizePhone,           // phone
-  todayISO, formatDateDMY, isValidISODate, monthRange, // dates
-  toAsciiDigits,                                    // Urdu digits -> 0-9
-} from '@skeleton/core';
-
-formatPaisa(245050);              // "Rs 2,450.50"  (integer maths, same on every device)
-parseWholeRupees('۲۵۰۰');          // 2500  (accepts Urdu digits, commas, spaces; null if invalid)
-paisaFromRupees(2500);            // 250000
-validatePakistaniPhone('0300-1234567'); // true
-todayISO();                       // local "YYYY-MM-DD" (not the UTC day)
-formatDateDMY('2026-10-15');      // "15/10/2026"
-monthRange();                     // { from: '2026-11-01', to: '2026-11-30' }
-```
-
-### `useStoreSnapshot`: keep screens in sync with the local store
-
-```tsx
-const { data, error, reload } = useStoreSnapshot(loadEverything, { engine });
-// after any write:  await store.add(...);  await reload();
-```
-
-Loads once, reloads on demand, and (when you pass the sync engine) reloads whenever
-sync activity changes the data. Stale overlapping loads are dropped.
-
-### `useTranslation`
-
-Re-exported from `@skeleton/core` so apps never import `react-i18next` themselves.
-
-### `BottomNav` and `ScreenHeader`
-
-```tsx
-<BottomNav
-  items={[{ key: 'home', label: t('nav.home'), icon: <HomeIcon /> }, /* ... */]}
-  active={tab}
-  onSelect={setTab}
-  ariaLabel={t('nav.label')}
-/>
-
-<ScreenHeader title={t('customers.title')} onBack={goBack} backLabel={t('common.back')} />
-```
-
-Both use logical Tailwind classes and 44px+ touch targets; the back chevron mirrors in RTL.
-`AppShell` renders a phone-width column (`max-w-md`) centred on desktop screens.
-Leave about `pb-24` under your content when using `BottomNav`.
-
-### Rules every app follows
-
-- All data goes through `createStore` / `deriveState` / `createSyncEngine`. No IndexedDB, no `fetch`.
-- Records are append-only. Fix mistakes with a reversal record, never an edit or delete.
-- Money is integer paisa. Dates are local `YYYY-MM-DD`.
-- Every string is an i18n key in both `en.json` and `ur.json`. Layout uses `ms-`/`me-`/`ps-`/`pe-`/`text-start`/`text-end`.
-- Add `@source "../../../packages/skeleton/src";` to the app's `index.css`.
-
-See `apps/khata` for a complete app built this way.
+From the repository root, `npm test` runs the skeleton suites alongside the apps': storage, the sync engine (including a property-based convergence test across three devices), i18n and RTL, the helpers (property-based), hooks, and every UI component (accessibility, touch targets, RTL classes, dialog focus handling, a chart that never draws NaN).

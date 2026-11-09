@@ -10,32 +10,54 @@
     },
     "dashboard": {
       "totalOutstanding": "Total Outstanding",
+      "owingCount_one": "1 customer owes you money",
+      "owingCount_other": "{{count}} customers owe you money",
+      "allSettled": "Everyone is settled",
       "today": "Today",
       "creditToday": "Credit Given",
       "paymentsToday": "Payments Received",
       "topDebtors": "Customers Who Owe the Most",
-      "noDebtors": "No one owes money right now"
+      "noDebtors": "No one owes money right now",
+      "welcomeTitle": "Welcome to Khata",
+      "welcomeText": "Add your first customer to start keeping your udhaar book.",
+      "addFirst": "Add your first customer",
+      "tryDemo": "Try with demo data"
     },
     "customers": {
       "title": "Customers",
       "search": "Search name or phone",
       "addButton": "Add Customer",
-      "emptyState": "No customers yet. Tap Add Customer to create one.",
+      "emptyTitle": "No customers yet",
+      "emptyState": "Add your first customer to get started.",
       "noResults": "No customer found",
+      "noResultsHint": "Check the spelling, or add this person as a new customer.",
       "owes": "Owes",
       "settled": "Settled",
       "advance": "Advance"
+    },
+    "quickEntry": {
+      "fab": "Quick entry",
+      "title": "Quick Entry",
+      "chooseCustomer": "Choose a customer",
+      "searchLabel": "Search customer by name or phone",
+      "change": "Change",
+      "typeLabel": "Entry type",
+      "noCustomersTitle": "Add a customer first",
+      "noCustomersText": "You need at least one customer to record credit or a payment."
     },
     "addCustomer": {
       "title": "Add Customer",
       "editTitle": "Edit Customer",
       "nameLabel": "Name",
       "phoneLabel": "Phone (optional)",
-      "phonePlaceholder": "03XX-XXXXXXX",
+      "phonePlaceholder": "0300-1234567",
       "noteLabel": "Note (optional)",
       "saveButton": "Save Customer",
       "nameRequired": "Name is required",
-      "phoneInvalid": "Enter a valid Pakistani mobile number (03XXXXXXXXX)"
+      "phoneInvalid": "Enter a valid Pakistani mobile number (e.g. 0300-1234567)",
+      "nameTooLong": "Name can be at most {{max}} characters",
+      "noteTooLong": "Note can be at most {{max}} characters",
+      "duplicate": "A customer with this name and phone number already exists"
     },
     "customerDetail": {
       "balance": "Balance",
@@ -49,6 +71,7 @@
       "reversedReason": "Reason: {{reason}}",
       "correctButton": "Correct Mistake",
       "noTransactions": "No transactions yet",
+      "firstEntryHint": "Record the first credit or payment for this customer.",
       "editButton": "Edit",
       "notFound": "Customer not found"
     },
@@ -62,7 +85,8 @@
       "saveButton": "Save",
       "amountRequired": "Amount is required",
       "amountInvalid": "Enter a whole number of rupees (minimum Rs 1)",
-      "dateRequired": "Enter a valid date"
+      "dateRequired": "Enter a valid date",
+      "noteTooLong": "Note can be at most {{max}} characters"
     },
     "reverseEntry": {
       "title": "Correct Mistake",
@@ -71,30 +95,55 @@
       "reasonLabel": "Reason for reversal (required)",
       "confirmButton": "Confirm Reversal",
       "reasonRequired": "Reason is required",
+      "reasonTooLong": "Reason can be at most {{max}} characters",
       "alreadyReversed": "This entry is already reversed",
       "notFound": "Entry not found"
     },
     "reports": {
       "title": "Reports",
+      "rangeLabel": "Date range",
+      "today": "Today",
+      "thisWeek": "This Week",
+      "thisMonth": "This Month",
       "fromLabel": "From",
       "toLabel": "To",
       "creditGiven": "Credit Given",
       "paymentsReceived": "Payments Received",
       "net": "Net (payments minus credit)",
-      "rangeInvalid": "The start date must not be after the end date"
+      "rangeInvalid": "The start date must not be after the end date",
+      "chartTitle": "Credit and payments by day",
+      "chartLabel": "Bar chart of credit given and payments received per day",
+      "chartDescription": "Credit given {{credit}}, payments received {{payments}}.",
+      "byCustomer": "By customer",
+      "noActivityTitle": "No transactions in this period",
+      "noActivityText": "Try a different date range, or record an entry.",
+      "recordEntry": "Record an entry",
+      "unknownCustomer": "Unknown customer"
     },
     "settings": {
       "title": "Settings",
       "shopNameLabel": "Shop Name",
       "defaultShopName": "My Shop",
       "shopNameRequired": "Shop name cannot be empty",
+      "shopNameTooLong": "Shop name can be at most {{max}} characters",
       "languageLabel": "Language",
+      "dataSection": "Your data",
       "exportButton": "Download Data (CSV)",
+      "exportHint": "Keep a copy of every customer and transaction on your phone.",
       "demoButton": "Load Demo Data",
+      "demoTitle": "Load demo data?",
       "demoConfirm": "This will add sample customers and transactions. Continue?",
       "demoConfirmYes": "Yes, add sample data",
       "demoWarning": "Adds sample data for demonstration",
       "demoLoaded": "Sample data added",
+      "demoAlreadyLoaded": "Sample data is already loaded",
+      "dangerZone": "Danger zone",
+      "clearButton": "Clear all data",
+      "clearHint": "Deletes everything on this phone",
+      "clearTitle": "Delete all data?",
+      "clearConfirm": "This permanently deletes every customer and entry from this phone. It cannot be undone. Download a backup first if you need one.",
+      "clearConfirmYes": "Yes, delete everything",
+      "cleared": "All data was deleted",
       "saved": "Saved"
     },
     "reminder": {

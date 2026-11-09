@@ -1,82 +1,142 @@
-import { toISODate } from '@skeleton/core';
+import { addDays, todayISO } from '@skeleton/core';
 import type { Store } from '@skeleton/core';
+import { DEFAULT_SHOP_NAME, deriveSettings } from '../khata.reducers';
 import type { KhataCollections } from '../khata.types';
 
-/** Local calendar date (YYYY-MM-DD) N days before today. */
-function daysAgo(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return toISODate(d);
-}
+export type DemoResult = 'loaded' | 'alreadyLoaded';
+
+type DemoCustomer = { name: string; phone?: string; note?: string };
+type DemoEntry = {
+  /** index into DEMO_CUSTOMERS */
+  customer: number;
+  daysAgo: number;
+  type: 'credit' | 'payment';
+  rupees: number;
+  note?: string;
+  /** If set, the entry is then reversed with this reason (a typing mistake). */
+  reversedBecause?: string;
+};
+
+export const DEMO_SHOP_NAME = 'Al-Madina General Store';
+
+/** Eight everyday kiryana customers. Phones are stored unformatted. */
+export const DEMO_CUSTOMERS: DemoCustomer[] = [
+  { name: 'Muhammad Aslam', phone: '03001234567', note: 'Monthly ration customer' },
+  { name: 'Rukhsana Bibi', phone: '03331234567' },
+  { name: 'Imran Hussain', phone: '03455678901', note: 'Pays at the start of the month' },
+  { name: 'Ayesha Siddiqui', phone: '03008765432' },
+  { name: 'Zahid Mehmood' },
+  { name: 'Naseem Akhtar', phone: '03123456789' },
+  { name: 'Shabana Kausar', phone: '03459988776' },
+  { name: 'Tariq Javed', phone: '03017788991', note: 'Lives next to the mosque' },
+];
 
 /**
- * Load realistic sample data into the store for demonstrations.
- *
- * Inserts 5 customers with Pakistani names, multiple transactions per
- * customer spread over the last 30 days, one reversed entry, and varied
- * balances (owing, settled, advance). Also sets a shop name.
- *
- * All inserts go through `store.add` — same code path as real entries,
- * so sync, derivation, and balance calculation are exercised.
- *
- * Resulting balances:
- *   Ahmed Ali      — Rs 8,000  (owes, large)
- *   Bilal Khan     — Rs 4,000  (owes, medium)
- *   Tariq Mehmood  — Rs 1,500  (owes, small, has a reversal)
- *   Sara Begum     — Rs 0      (settled)
- *   Fatima Noor    — Rs -2,000 (advance payment)
+ * Entries over the last 30 days. Resulting balances (Rs):
+ *   Muhammad Aslam 2,880 owes   | Rukhsana Bibi 2,040 owes | Imran Hussain 4,730 owes
+ *   Ayesha Siddiqui 0 settled   | Zahid Mehmood 2,500 owes (Rs 3,000 typo reversed)
+ *   Naseem Akhtar -500 advance  | Shabana Kausar 1,180 owes | Tariq Javed 2,390 owes
  */
-export async function loadDemoData(store: Store<KhataCollections>): Promise<void> {
-  // --- Settings ---
-  await store.add('settingsUpdated', { shopName: 'Ahmed General Store' });
+export const DEMO_ENTRIES: DemoEntry[] = [
+  // Muhammad Aslam
+  { customer: 0, daysAgo: 27, type: 'credit', rupees: 3480, note: 'Monthly ration' },
+  { customer: 0, daysAgo: 19, type: 'payment', rupees: 1500 },
+  { customer: 0, daysAgo: 12, type: 'credit', rupees: 1250, note: 'Atta, chawal' },
+  { customer: 0, daysAgo: 6, type: 'credit', rupees: 650, note: 'Cooking oil' },
+  { customer: 0, daysAgo: 2, type: 'payment', rupees: 1000 },
+  // Rukhsana Bibi
+  { customer: 1, daysAgo: 25, type: 'credit', rupees: 2200, note: 'Ration' },
+  { customer: 1, daysAgo: 14, type: 'credit', rupees: 890, note: 'Doodh, dahi' },
+  { customer: 1, daysAgo: 8, type: 'payment', rupees: 1500 },
+  { customer: 1, daysAgo: 0, type: 'credit', rupees: 450, note: 'Chai patti, cheeni' },
+  // Imran Hussain
+  { customer: 2, daysAgo: 22, type: 'credit', rupees: 5600, note: 'Wedding ration' },
+  { customer: 2, daysAgo: 15, type: 'payment', rupees: 2000 },
+  { customer: 2, daysAgo: 9, type: 'credit', rupees: 1350 },
+  { customer: 2, daysAgo: 3, type: 'payment', rupees: 1000 },
+  { customer: 2, daysAgo: 1, type: 'credit', rupees: 780, note: 'Biscuits, juice' },
+  // Ayesha Siddiqui: fully settled
+  { customer: 3, daysAgo: 21, type: 'credit', rupees: 1800 },
+  { customer: 3, daysAgo: 13, type: 'credit', rupees: 725 },
+  { customer: 3, daysAgo: 5, type: 'payment', rupees: 2525, note: 'Cleared the full account' },
+  // Zahid Mehmood: one mistake, reversed
+  { customer: 4, daysAgo: 18, type: 'credit', rupees: 950 },
+  { customer: 4, daysAgo: 11, type: 'credit', rupees: 1250 },
+  {
+    customer: 4,
+    daysAgo: 7,
+    type: 'credit',
+    rupees: 3000,
+    note: 'Sugar and tea',
+    reversedBecause: 'Typed Rs 3,000 instead of Rs 300',
+  },
+  { customer: 4, daysAgo: 7, type: 'credit', rupees: 300, note: 'Sugar and tea' },
+  // Naseem Akhtar: paid in advance
+  { customer: 5, daysAgo: 16, type: 'credit', rupees: 1100 },
+  { customer: 5, daysAgo: 4, type: 'payment', rupees: 1600, note: 'Advance for next month' },
+  // Shabana Kausar
+  { customer: 6, daysAgo: 28, type: 'credit', rupees: 4120, note: 'Eid ration' },
+  { customer: 6, daysAgo: 20, type: 'payment', rupees: 3000 },
+  { customer: 6, daysAgo: 10, type: 'credit', rupees: 560 },
+  { customer: 6, daysAgo: 0, type: 'payment', rupees: 500 },
+  // Tariq Javed
+  { customer: 7, daysAgo: 29, type: 'credit', rupees: 2750, note: 'Gharelu saman' },
+  { customer: 7, daysAgo: 17, type: 'payment', rupees: 1000 },
+  { customer: 7, daysAgo: 0, type: 'credit', rupees: 640, note: 'Dal, sabzi masala' },
+];
 
-  // --- Customer 1: Ahmed Ali — owes Rs 8,000 ---
-  const ahmed = await store.add('customerCreated', {
-    name: 'Ahmed Ali',
-    phone: '03001234567',
-    note: 'Regular customer',
-  });
-  await store.add('creditGiven', { customerId: ahmed.id, amountPaisa: 500000, date: daysAgo(20), note: 'Monthly ration' });
-  await store.add('creditGiven', { customerId: ahmed.id, amountPaisa: 300000, date: daysAgo(10) });
-  await store.add('paymentReceived', { customerId: ahmed.id, amountPaisa: 200000, date: daysAgo(5) });
-  await store.add('creditGiven', { customerId: ahmed.id, amountPaisa: 200000, date: daysAgo(0), note: 'Today ration' });
+async function insertDemoData(store: Store<KhataCollections>): Promise<DemoResult> {
+  const settings = deriveSettings(await store.query('settingsUpdated'));
+  if (settings.demoDataLoaded) return 'alreadyLoaded';
 
-  // --- Customer 2: Bilal Khan — owes Rs 4,000 ---
-  const bilal = await store.add('customerCreated', {
-    name: 'Bilal Khan',
-    phone: '03007654321',
+  // Write the marker FIRST: even if two taps race or something fails half way,
+  // the sample data can never be added a second time.
+  await store.add('settingsUpdated', {
+    demoDataLoaded: true,
+    // Do not overwrite a shop name the owner already chose.
+    ...(settings.shopName === DEFAULT_SHOP_NAME ? { shopName: DEMO_SHOP_NAME } : {}),
   });
-  await store.add('creditGiven', { customerId: bilal.id, amountPaisa: 400000, date: daysAgo(15) });
-  await store.add('paymentReceived', { customerId: bilal.id, amountPaisa: 100000, date: daysAgo(8) });
-  await store.add('creditGiven', { customerId: bilal.id, amountPaisa: 200000, date: daysAgo(3) });
-  await store.add('paymentReceived', { customerId: bilal.id, amountPaisa: 100000, date: daysAgo(0) });
 
-  // --- Customer 3: Sara Begum — settled (Rs 0) ---
-  const sara = await store.add('customerCreated', {
-    name: 'Sara Begum',
-  });
-  await store.add('creditGiven', { customerId: sara.id, amountPaisa: 200000, date: daysAgo(12) });
-  await store.add('paymentReceived', { customerId: sara.id, amountPaisa: 200000, date: daysAgo(6), note: 'Full payment' });
+  const customerIds: string[] = [];
+  for (const customer of DEMO_CUSTOMERS) {
+    const created = await store.add('customerCreated', customer);
+    customerIds.push(created.id);
+  }
 
-  // --- Customer 4: Fatima Noor — advance (Rs -2,000) ---
-  const fatima = await store.add('customerCreated', {
-    name: 'Fatima Noor',
-    phone: '03331234567',
-  });
-  await store.add('creditGiven', { customerId: fatima.id, amountPaisa: 100000, date: daysAgo(18) });
-  await store.add('paymentReceived', { customerId: fatima.id, amountPaisa: 300000, date: daysAgo(4), note: 'Advance payment' });
+  // Insert oldest first so the order they were recorded matches their dates.
+  const today = todayISO();
+  const ordered = DEMO_ENTRIES.map((entry, index) => ({ entry, index })).sort(
+    (a, b) => b.entry.daysAgo - a.entry.daysAgo || a.index - b.index,
+  );
 
-  // --- Customer 5: Tariq Mehmood — owes Rs 1,500 (has a reversal) ---
-  const tariq = await store.add('customerCreated', {
-    name: 'Tariq Mehmood',
-  });
-  await store.add('creditGiven', { customerId: tariq.id, amountPaisa: 200000, date: daysAgo(14) });
-  const wrongCredit = await store.add('creditGiven', {
-    customerId: tariq.id,
-    amountPaisa: 100000,
-    date: daysAgo(7),
-    note: 'Wrong amount',
-  });
-  await store.add('entryReversed', { entryId: wrongCredit.id, reason: 'Wrong amount entered' });
-  await store.add('paymentReceived', { customerId: tariq.id, amountPaisa: 50000, date: daysAgo(2) });
+  for (const { entry } of ordered) {
+    const payload = {
+      customerId: customerIds[entry.customer],
+      amountPaisa: entry.rupees * 100,
+      date: addDays(today, -entry.daysAgo),
+      ...(entry.note ? { note: entry.note } : {}),
+    };
+    const saved =
+      entry.type === 'credit' ? await store.add('creditGiven', payload) : await store.add('paymentReceived', payload);
+    if (entry.reversedBecause) {
+      await store.add('entryReversed', { entryId: saved.id, reason: entry.reversedBecause });
+    }
+  }
+  return 'loaded';
+}
+
+const inFlight = new WeakMap<object, Promise<DemoResult>>();
+
+/**
+ * Add the realistic sample shop to the store, at most once.
+ *  - If the demo data is already there, nothing is added and 'alreadyLoaded' is returned.
+ *  - Two overlapping calls share one run, so a double tap cannot duplicate customers.
+ * Everything goes through store.add, the same path as real entries.
+ */
+export function loadDemoData(store: Store<KhataCollections>): Promise<DemoResult> {
+  const running = inFlight.get(store);
+  if (running) return running;
+  const task = insertDemoData(store).finally(() => inFlight.delete(store));
+  inFlight.set(store, task);
+  return task;
 }

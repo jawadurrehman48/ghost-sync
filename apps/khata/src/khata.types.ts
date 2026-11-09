@@ -1,7 +1,7 @@
 import type { SkeletonRecord } from '@skeleton/core';
 
 // ---------------------------------------------------------------------------
-// Collection payload types
+// Collection payload types (what is stored; append-only)
 // ---------------------------------------------------------------------------
 
 export type KhataCollections = {
@@ -11,36 +11,40 @@ export type KhataCollections = {
     phone?: string;
     note?: string;
   };
-  /** A customer's info is changed (latest record wins for given customerId) */
+  /** A customer's info is changed (latest value of each field wins) */
   customerUpdated: {
     customerId: string;
     name?: string;
     phone?: string;
     note?: string;
   };
-  /** Shopkeeper gives credit — customer owes more */
+  /** Shopkeeper gives credit: the customer owes more */
   creditGiven: {
     customerId: string;
+    /** Whole paisa, always a positive integer */
     amountPaisa: number;
     note?: string;
+    /** Local calendar date, YYYY-MM-DD */
     date: string;
   };
-  /** Customer pays — they owe less */
+  /** Customer pays: they owe less */
   paymentReceived: {
     customerId: string;
     amountPaisa: number;
     note?: string;
     date: string;
   };
-  /** Corrects a mistake by cancelling a previous credit/payment entry */
+  /** Corrects a mistake by cancelling a previous credit or payment entry */
   entryReversed: {
     entryId: string;
     reason: string;
   };
-  /** Shop-level settings (append-only, latest record wins) */
+  /** Shop-level settings (latest value of each field wins) */
   settingsUpdated: {
     shopName?: string;
     language?: 'en' | 'ur';
+    /** Written once when the demo data is loaded, so it is never loaded twice */
+    demoDataLoaded?: boolean;
   };
 };
 
@@ -49,7 +53,7 @@ export type KhataCollections = {
 // ---------------------------------------------------------------------------
 
 export type CustomerInfo = {
-  /** The customerCreated record id — used as the customer id throughout */
+  /** The customerCreated record id, used as the customer id everywhere */
   id: string;
   name: string;
   phone?: string;
@@ -74,12 +78,15 @@ export type BalanceState = {
   /** Positive = customer owes; negative = advance payment */
   balancePaisa: number;
   reversedEntryIds: Set<string>;
+  /** Oldest first, ordered by entry date */
   entries: LedgerEntry[];
 };
 
 export type DashboardState = {
   /** Sum of all positive customer balances */
   totalOutstandingPaisa: number;
+  /** How many customers have a positive balance */
+  customersOwingCount: number;
   creditTodayPaisa: number;
   paymentsTodayPaisa: number;
   topDebtors: { customerId: string; name: string; balancePaisa: number }[];
@@ -88,13 +95,30 @@ export type DashboardState = {
 export type Settings = {
   shopName: string;
   language: 'en' | 'ur';
+  demoDataLoaded: boolean;
 };
 
 export type ReportTotals = {
   creditPaisa: number;
   paymentsPaisa: number;
-  /** payments − credit. Positive = more collected than lent in the range. */
+  /** payments minus credit. Positive = more collected than lent in the range. */
   netPaisa: number;
+};
+
+/** One bar group in the report chart: totals for a run of days. */
+export type ChartBucket = {
+  from: string;
+  to: string;
+  creditPaisa: number;
+  paymentsPaisa: number;
+};
+
+/** One customer's activity inside a report range. */
+export type CustomerBreakdownRow = {
+  customerId: string;
+  name: string;
+  creditPaisa: number;
+  paymentsPaisa: number;
 };
 
 export type CustomerRow = {
@@ -121,13 +145,16 @@ export type KhataData = {
 /** Everything the screens display, derived from KhataData. */
 export type KhataDerived = {
   customers: CustomerInfo[];
-  /** customerId → balance in paisa (missing = 0) */
+  /** customerId to balance in paisa (missing = 0) */
   balances: Map<string, number>;
   settings: Settings;
   dashboard: DashboardState;
   /** Local date (YYYY-MM-DD) the derivation used as "today" */
   today: string;
 };
+
+/** Screens that can open the quick-entry flow (and where Back returns to). */
+export type QuickEntryOrigin = 'dashboard' | 'customerList' | 'reports';
 
 export type Screen =
   | { name: 'dashboard' }
@@ -136,18 +163,7 @@ export type Screen =
   | { name: 'editCustomer'; customerId: string }
   | { name: 'customerDetail'; customerId: string }
   | { name: 'addEntry'; customerId: string; type: 'credit' | 'payment' }
+  | { name: 'quickEntry'; from: QuickEntryOrigin }
   | { name: 'reverseEntry'; entryId: string; customerId: string }
   | { name: 'reports' }
   | { name: 'settings' };
-
-// ---------------------------------------------------------------------------
-// Convenience aliases for record types used in reducers and tests
-// ---------------------------------------------------------------------------
-
-export type AnyKhataRecord =
-  | SkeletonRecord<KhataCollections['customerCreated']>
-  | SkeletonRecord<KhataCollections['customerUpdated']>
-  | SkeletonRecord<KhataCollections['creditGiven']>
-  | SkeletonRecord<KhataCollections['paymentReceived']>
-  | SkeletonRecord<KhataCollections['entryReversed']>
-  | SkeletonRecord<KhataCollections['settingsUpdated']>;

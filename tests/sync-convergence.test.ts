@@ -4,20 +4,16 @@ import Dexie from 'dexie';
 import {
   createDatabase,
   createStore,
-  getOrCreateDeviceId,
   createSyncEngine,
   InMemorySyncAdapter,
   type Store,
+  type TypedDexie,
 } from '@skeleton/core';
 
 interface ConvCollections {
   items: { value: number };
   notes: { text: string };
 }
-
-type Operation =
-  | { type: 'add'; device: number; collection: 'items' | 'notes' }
-  | { type: 'sync'; device: number };
 
 const NUM_DEVICES = 3;
 
@@ -38,12 +34,12 @@ const arbOperations = fc.array(
 );
 
 interface DeviceContext {
-  db: Dexie;
+  db: TypedDexie<ConvCollections>;
   store: Store<ConvCollections>;
   deviceId: string;
 }
 
-async function setupDevices(adapter: InMemorySyncAdapter): Promise<DeviceContext[]> {
+async function setupDevices(): Promise<DeviceContext[]> {
   const devices: DeviceContext[] = [];
   for (let i = 0; i < NUM_DEVICES; i++) {
     const dbName = `conv-test-${i}-${Date.now()}-${Math.random()}`;
@@ -52,14 +48,14 @@ async function setupDevices(adapter: InMemorySyncAdapter): Promise<DeviceContext
       collections: { items: undefined, notes: undefined },
     });
     const deviceId = `device-${i}`;
-    const store = createStore(db as any, deviceId);
+    const store = createStore(db, deviceId);
     devices.push({ db, store, deviceId });
   }
   return devices;
 }
 
 async function cleanupDevices(devices: DeviceContext[]): Promise<void> {
-  for (const { db, store } of devices) {
+  for (const { db } of devices) {
     db.close();
     await Dexie.delete(db.name);
   }
@@ -70,7 +66,7 @@ describe('Sync convergence (property-based)', () => {
     await fc.assert(
       fc.asyncProperty(arbOperations, async (operations) => {
         const adapter = new InMemorySyncAdapter();
-        const devices = await setupDevices(adapter);
+        const devices = await setupDevices();
 
         try {
           let totalAdds = 0;

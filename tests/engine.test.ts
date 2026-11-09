@@ -9,13 +9,14 @@ import {
   type SyncStatus,
   type Store,
   type SyncAdapter,
+  type TypedDexie,
 } from '@skeleton/core';
 
 interface TestCollections {
   items: { name: string; value: number };
 }
 
-let db: Dexie;
+let db: TypedDexie<TestCollections>;
 let store: Store<TestCollections>;
 
 function setupStore(dbName: string): void {
@@ -23,7 +24,7 @@ function setupStore(dbName: string): void {
     dbName,
     collections: { items: undefined },
   });
-  store = createStore(db as any, getOrCreateDeviceId());
+  store = createStore(db, getOrCreateDeviceId());
 }
 
 function setOnline(online: boolean): void {
@@ -94,10 +95,7 @@ describe('SyncEngine', () => {
     const engine = createSyncEngine({ adapter: partialAdapter, store });
     await engine.syncNow();
 
-    expect(engine.getStatus().state).toBe('pending');
-    if (engine.getStatus().state === 'pending') {
-      expect(engine.getStatus().count).toBe(1);
-    }
+    expect(engine.getStatus()).toEqual({ state: 'pending', count: 1 });
   });
 
   it('should not sync when offline', async () => {
@@ -210,10 +208,7 @@ describe('SyncEngine', () => {
     // Wait for retries to exhaust
     await new Promise((r) => setTimeout(r, 200));
 
-    expect(engine.getStatus().state).toBe('error');
-    if (engine.getStatus().state === 'error') {
-      expect(engine.getStatus().message).toContain('Permanent failure');
-    }
+    expect(engine.getStatus()).toEqual({ state: 'error', message: expect.stringContaining('Permanent failure') });
   });
 
   it('should not start a second concurrent sync cycle', async () => {

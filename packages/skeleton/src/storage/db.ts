@@ -4,7 +4,7 @@ import type { SyncedRow } from './types';
 /**
  * Configuration for creating a Dexie database.
  * Each key in `collections` becomes a Dexie table.
- * The values are ignored at runtime — only the keys matter.
+ * The values are ignored at runtime; only the keys matter.
  */
 export interface StorageConfig<C> {
   dbName: string;
@@ -22,7 +22,7 @@ export type TypedDexie<C> = Dexie & {
  * Create a Dexie database with one table per collection.
  *
  * Each table stores `SyncedRow<P>` rows and indexes:
- * - `id` (primary key — Dexie uses `&id` for this)
+ * - `id` (primary key; Dexie uses `&id` for this)
  * - `createdAt` (for ordering queries)
  * - `_syncStatus` (for querying pending sync records)
  *
@@ -44,4 +44,16 @@ export function createDatabase<C>(config: StorageConfig<C>): TypedDexie<C> {
   db.version(1).stores(schema);
 
   return db;
+}
+
+/**
+ * Erase every record on THIS device (all collections), in one transaction.
+ * Irreversible. The Store stays append-only for normal use; this is the
+ * explicit "reset the phone" operation behind a confirmation dialog.
+ * The device id and language preference are kept.
+ */
+export async function clearAllData<C>(db: TypedDexie<C>): Promise<void> {
+  await db.transaction('rw', db.tables, async () => {
+    await Promise.all(db.tables.map((table) => table.clear()));
+  });
 }

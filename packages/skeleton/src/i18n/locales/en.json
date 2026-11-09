@@ -1,1 +1,22 @@
-{"welcome": "Welcome to Ghost Sync", "sync": {"synced": "Synced", "pending": "{{count}} pending", "syncing": "Syncing", "offline": "Offline", "error": "Error"}, "language": {"toggleLabel": "Switch language", "english": "English", "urdu": "اردو"}}
+{
+  "welcome": "Welcome to Ghost Sync",
+  "loading": "Loading…",
+  "sync": {
+    "synced": "Synced",
+    "pending": "{{count}} pending",
+    "syncing": "Syncing",
+    "offline": "Offline",
+    "error": "Error"
+  },
+  "language": {
+    "toggleLabel": "Switch language",
+    "english": "English",
+    "urdu": "اردو"
+  },
+  "error": {
+    "title": "Something went wrong",
+    "message": "The app hit a problem. Your data is safe on this phone.",
+    "retry": "Try again",
+    "reload": "Reopen the app"
+  }
+}

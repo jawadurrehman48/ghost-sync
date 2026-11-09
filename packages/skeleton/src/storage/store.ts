@@ -6,30 +6,10 @@ import type {
 } from './types';
 
 /**
- * The public, append-only storage API.
- *
- * `add` and `query` are for app use. The sync-internal methods
- * (`getAllIds`, `getPending`, `markSynced`, `ingestPulled`) are used
- * by the SyncEngine and are exposed on the same object but are not
- * part of the app-facing surface.
+ * The sync-internal half of a store: everything the SyncEngine needs.
+ * Apps never call these directly.
  */
-export interface Store<C> {
-  /**
-   * Append a new record to the given collection.
-   * Generates id, createdAt, deviceId, and collection automatically.
-   * The record is marked `_syncStatus: 'pending'`.
-   * Returns the clean Record<P> (without internal fields).
-   */
-  add<K extends keyof C>(collection: K, payload: C[K]): Promise<RecordType<C[K]>>;
-
-  /**
-   * Query all records in a collection, ordered by `createdAt` ascending.
-   * Returns clean Record<P>[] (strips `_syncStatus`).
-   */
-  query<K extends keyof C>(collection: K): Promise<RecordType<C[K]>[]>;
-
-  // --- Sync-internal methods (used by SyncEngine) ---
-
+export interface SyncableStore {
   /** Returns all record ids known locally, across all collections. */
   getAllIds(): Promise<string[]>;
 
@@ -45,6 +25,28 @@ export interface Store<C> {
    * Idempotent: if the id already exists, the row is skipped.
    */
   ingestPulled(record: RecordType<unknown>): Promise<void>;
+}
+
+/**
+ * The public, append-only storage API.
+ *
+ * `add` and `query` are for app use. The sync-internal methods inherited from
+ * SyncableStore are used by the SyncEngine.
+ */
+export interface Store<C> extends SyncableStore {
+  /**
+   * Append a new record to the given collection.
+   * Generates id, createdAt, deviceId, and collection automatically.
+   * The record is marked `_syncStatus: 'pending'`.
+   * Returns the clean Record<P> (without internal fields).
+   */
+  add<K extends keyof C>(collection: K, payload: C[K]): Promise<RecordType<C[K]>>;
+
+  /**
+   * Query all records in a collection, ordered by `createdAt` ascending.
+   * Returns clean Record<P>[] (strips `_syncStatus`).
+   */
+  query<K extends keyof C>(collection: K): Promise<RecordType<C[K]>[]>;
 }
 
 /**

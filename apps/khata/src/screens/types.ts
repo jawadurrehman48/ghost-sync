@@ -15,4 +15,6 @@ export type ScreenProps = {
   language: Language;
   /** Switches the app language and records it as a setting. */
   changeLanguage: (language: Language) => Promise<void>;
+  /** Erases all data on this phone (the Settings "danger" action). */
+  onClearAll: () => Promise<void>;
 };

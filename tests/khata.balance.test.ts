@@ -103,7 +103,7 @@ describe('TR-2: result does not depend on the order records arrive in (property-
     fc.assert(
       fc.property(arbSpecs, fc.integer(), (specs, seed) => {
         const l = buildLedger(specs, 3);
-        const sameTime = (r: { createdAt: string }) => ({ ...r, createdAt: '2026-03-01T00:00:00.000Z' });
+        const sameTime = <T extends { createdAt: string }>(r: T): T => ({ ...r, createdAt: '2026-03-01T00:00:00.000Z' });
         const credit = l.credit.map(sameTime);
         const payment = l.payment.map(sameTime);
         const a = deriveBalance(credit, payment, l.reversal, 'cust-2');

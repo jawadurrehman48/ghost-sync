@@ -16,15 +16,10 @@ export interface BottomNavProps<K extends string = string> {
 
 /**
  * Bottom tab bar, pinned to the bottom of the phone-width column.
- * Each tab is at least 56px tall. Order flips automatically in RTL because
- * it is a flex row. Pages using it should leave ~80px of bottom padding.
+ * Each tab is at least 56px tall. Tab order flips automatically in RTL because
+ * it is a flex row. Pages using it should leave ~96px of bottom padding.
  */
-export function BottomNav<K extends string = string>({
-  items,
-  active,
-  onSelect,
-  ariaLabel,
-}: BottomNavProps<K>) {
+export function BottomNav<K extends string = string>({ items, active, onSelect, ariaLabel }: BottomNavProps<K>) {
   return (
     <nav
       aria-label={ariaLabel}
@@ -39,8 +34,10 @@ export function BottomNav<K extends string = string>({
                 type="button"
                 onClick={() => onSelect(item.key)}
                 aria-current={isActive ? 'page' : undefined}
-                className={`flex min-h-[56px] w-full flex-col items-center justify-center gap-0.5 px-1 text-xs font-medium ${
-                  isActive ? 'text-indigo-700' : 'text-gray-600 hover:text-gray-900'
+                className={`flex min-h-[56px] w-full flex-col items-center justify-center gap-0.5 border-t-2 px-1 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-600 ${
+                  isActive
+                    ? 'border-brand-600 bg-brand-50 text-brand-700'
+                    : 'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 }`}
               >
                 {item.icon}

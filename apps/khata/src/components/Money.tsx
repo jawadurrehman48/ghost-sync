@@ -7,6 +7,7 @@ import { formatPaisa } from '@skeleton/core';
  * muted    gray   (reversed entries)
  */
 export type MoneyTone = 'owed' | 'received' | 'balance' | 'muted';
+export type MoneySize = 'sm' | 'md' | 'lg' | 'xl' | 'hero';
 
 const RED = 'text-red-600';
 const GREEN = 'text-green-700';
@@ -24,26 +25,52 @@ function colorFor(tone: MoneyTone, paisa: number): string {
   }
 }
 
+/**
+ * Text size by size name AND by how long the amount is, so a huge amount such
+ * as "Rs 4,999,999,500" shrinks to fit a 360px screen instead of overflowing.
+ */
+function sizeFor(size: MoneySize, length: number): string {
+  switch (size) {
+    case 'sm':
+      return 'text-sm';
+    case 'md':
+      return length > 16 ? 'text-sm' : 'text-base';
+    case 'lg':
+      return length > 14 ? 'text-base' : 'text-lg';
+    case 'xl':
+      return length > 14 ? 'text-lg' : 'text-xl';
+    case 'hero':
+      if (length <= 11) return 'text-4xl';
+      if (length <= 14) return 'text-3xl';
+      if (length <= 18) return 'text-2xl';
+      return 'text-xl';
+  }
+}
+
 export interface MoneyProps {
   paisa: number;
   tone?: MoneyTone;
+  size?: MoneySize;
   className?: string;
   strikethrough?: boolean;
 }
 
 /**
  * An amount as "Rs 1,200". dir="ltr" keeps "Rs", digits, commas and a minus
- * sign in the right order even inside right-to-left (Urdu) text.
+ * sign in the right order even inside right-to-left (Urdu) text, and the
+ * plain sans-serif font keeps digits crisp and evenly spaced.
  */
-export function Money({ paisa, tone = 'balance', className = '', strikethrough = false }: MoneyProps) {
+export function Money({ paisa, tone = 'balance', size = 'md', className = '', strikethrough = false }: MoneyProps) {
+  const text = formatPaisa(paisa);
   return (
     <span
       dir="ltr"
-      className={`inline-block font-semibold tabular-nums ${colorFor(tone, paisa)} ${
-        strikethrough ? 'line-through' : ''
-      } ${className}`}
+      className={`inline-block shrink-0 whitespace-nowrap font-sans font-semibold tabular-nums ${colorFor(
+        tone,
+        paisa,
+      )} ${sizeFor(size, text.length)} ${strikethrough ? 'line-through' : ''} ${className}`}
     >
-      {formatPaisa(paisa)}
+      {text}
     </span>
   );
 }

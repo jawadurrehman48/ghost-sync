@@ -11,6 +11,16 @@ export function normalizePhone(phone: string): string {
 const PK_MOBILE_RE = /^03\d{9}$/;
 
 /**
+ * Show a phone number the way people write it: 0300-1234567.
+ * Numbers are STORED unformatted. Anything that is not a valid Pakistani
+ * mobile number is returned as typed, so odd data is never hidden.
+ */
+export function formatPhone(phone: string): string {
+  const digits = normalizePhone(phone);
+  return PK_MOBILE_RE.test(digits) ? `${digits.slice(0, 4)}-${digits.slice(4)}` : phone;
+}
+
+/**
  * Validate a Pakistani mobile number.
  *
  * Accepted (after normalizing): 11 digits starting with 03, e.g.

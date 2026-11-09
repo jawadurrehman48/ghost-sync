@@ -2,6 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AppShell,
   BottomNav,
+  Button,
+  ErrorBoundary,
+  FloatingActionButton,
+  LoadingState,
+  Notice,
+  clearAllData,
   setLanguage,
   todayISO,
   useLanguage,
@@ -9,9 +15,9 @@ import {
   useTranslation,
 } from '@skeleton/core';
 import type { Language, SyncStatus } from '@skeleton/core';
+import { Logo } from './components/Logo';
 import { CustomersIcon, HomeIcon, ReportsIcon, SettingsIcon } from './components/NavIcons';
-import { card, fieldError, secondaryButton } from './components/styles';
-import { engine, store } from './khata.store';
+import { adapter, db, engine, store } from './khata.store';
 import { deriveAll } from './khata.reducers';
 import type { KhataData, Screen } from './khata.types';
 import { AddCustomerScreen } from './screens/AddCustomerScreen';
@@ -19,6 +25,7 @@ import { AddEntryScreen } from './screens/AddEntryScreen';
 import { CustomerDetailScreen } from './screens/CustomerDetailScreen';
 import { CustomerListScreen } from './screens/CustomerListScreen';
 import { DashboardScreen } from './screens/DashboardScreen';
+import { QuickEntryScreen } from './screens/QuickEntryScreen';
 import { ReportsScreen } from './screens/ReportsScreen';
 import { ReverseEntryScreen } from './screens/ReverseEntryScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
@@ -84,6 +91,8 @@ function renderScreen(screen: Screen, props: ScreenProps) {
           type={screen.type}
         />
       );
+    case 'quickEntry':
+      return <QuickEntryScreen key="quick-entry" {...props} from={screen.from} />;
     case 'reverseEntry':
       return (
         <ReverseEntryScreen
@@ -170,6 +179,13 @@ function App() {
     [onChanged],
   );
 
+  /** Erase everything on this phone (and the mock cloud copy), then show the empty app. */
+  const onClearAll = useCallback(async () => {
+    await clearAllData(db);
+    adapter.reset();
+    await reload();
+  }, [reload]);
+
   const navItems = [
     { key: 'dashboard' as const, label: t('khata.nav.dashboard'), icon: <HomeIcon /> },
     { key: 'customers' as const, label: t('khata.nav.customers'), icon: <CustomersIcon /> },
@@ -177,40 +193,54 @@ function App() {
     { key: 'settings' as const, label: t('khata.nav.settings'), icon: <SettingsIcon /> },
   ];
 
+  const screenKey = JSON.stringify(screen);
+  const showQuickEntryButton = screen.name === 'dashboard' || screen.name === 'customerList';
+
   return (
     <AppShell
       appName={t('khata.appName')}
+      logo={<Logo />}
       syncStatus={syncStatus}
       onSyncNow={() => void engine.syncNow()}
       language={language}
       onToggleLanguage={() => void changeLanguage(language === 'en' ? 'ur' : 'en')}
     >
-      <div className="pb-24">
-        {derived && data ? (
-          renderScreen(screen, {
-            data,
-            derived,
-            store,
-            navigate,
-            onChanged,
-            language,
-            changeLanguage,
-          })
-        ) : error ? (
-          <div className={`${card} space-y-3`}>
-            <p role="alert" className={fieldError}>
-              {t('khata.common.errorGeneric')}
-            </p>
-            <button type="button" onClick={() => void reload()} className={secondaryButton}>
-              {t('khata.common.retry')}
-            </button>
-          </div>
-        ) : (
-          <p role="status" className="py-8 text-center text-gray-600">
-            {t('khata.common.loading')}
-          </p>
-        )}
+      {/* Room for the bottom navigation and the floating "+" button. */}
+      <div className="pb-32">
+        {/* Keyed by screen: a crash on one screen is cleared by navigating away. */}
+        <ErrorBoundary key={screenKey}>
+          {derived && data ? (
+            <div key={screenKey} className="animate-fade-in">
+              {renderScreen(screen, {
+                data,
+                derived,
+                store,
+                navigate,
+                onChanged,
+                language,
+                changeLanguage,
+                onClearAll,
+              })}
+            </div>
+          ) : error ? (
+            <div className="space-y-3">
+              <Notice tone="error">{t('khata.common.errorGeneric')}</Notice>
+              <Button variant="secondary" onClick={() => void reload()}>
+                {t('khata.common.retry')}
+              </Button>
+            </div>
+          ) : (
+            <LoadingState label={t('khata.common.loading')} />
+          )}
+        </ErrorBoundary>
       </div>
+
+      {showQuickEntryButton && derived && (
+        <FloatingActionButton
+          label={t('khata.quickEntry.fab')}
+          onClick={() => navigate({ name: 'quickEntry', from: screen.name === 'customerList' ? 'customerList' : 'dashboard' })}
+        />
+      )}
 
       <BottomNav
         items={navItems}

@@ -1,16 +1,30 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { ScreenHeader, normalizePhone, useTranslation, validatePakistaniPhone } from '@skeleton/core';
-import { fieldError, input, label, primaryButton } from '../components/styles';
+import {
+  Button,
+  Notice,
+  ScreenHeader,
+  TextAreaField,
+  TextField,
+  formatPhone,
+  normalizePhone,
+  useSubmitGuard,
+  useTranslation,
+  validatePakistaniPhone,
+} from '@skeleton/core';
+import { LIMITS, collapseSpaces, nameKey } from '../khata.limits';
 import type { KhataCollections } from '../khata.types';
 import type { ScreenProps } from './types';
 
-type Errors = { name?: string; phone?: string };
+type Errors = { name?: string; phone?: string; note?: string };
 
 /**
  * New-customer form (name required, phone optional and validated, note optional).
  * With `customerId` it edits instead: the changed fields are saved as an
  * append-only customerUpdated record. Nothing is ever overwritten.
+ *
+ * Protection: limits on name/note length, no second customer with the same
+ * name AND phone number, and a double tap on Save adds only one record.
  */
 export function AddCustomerScreen({
   derived,
@@ -20,13 +34,13 @@ export function AddCustomerScreen({
   customerId,
 }: ScreenProps & { customerId?: string }) {
   const { t } = useTranslation();
+  const guard = useSubmitGuard();
   const existing = customerId ? derived.customers.find((c) => c.id === customerId) : undefined;
 
   const [name, setName] = useState(existing?.name ?? '');
-  const [phone, setPhone] = useState(existing?.phone ?? '');
+  const [phone, setPhone] = useState(existing?.phone ? formatPhone(existing.phone) : '');
   const [note, setNote] = useState(existing?.note ?? '');
   const [errors, setErrors] = useState<Errors>({});
-  const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
 
   const goBack = () =>
@@ -34,41 +48,52 @@ export function AddCustomerScreen({
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    const cleanName = name.trim();
+    const cleanName = collapseSpaces(name);
     const cleanPhone = phone.trim();
     const cleanNote = note.trim();
+    const normalizedPhone = cleanPhone === '' ? '' : normalizePhone(cleanPhone);
 
     const next: Errors = {};
     if (cleanName === '') next.name = 'khata.addCustomer.nameRequired';
-    if (cleanPhone !== '' && !validatePakistaniPhone(cleanPhone)) next.phone = 'khata.addCustomer.phoneInvalid';
-    setErrors(next);
-    if (next.name || next.phone) return;
-
-    setSaving(true);
-    setFailed(false);
-    try {
-      const normalizedPhone = cleanPhone === '' ? '' : normalizePhone(cleanPhone);
-
-      if (existing) {
-        const changes: KhataCollections['customerUpdated'] = { customerId: existing.id };
-        if (cleanName !== existing.name) changes.name = cleanName;
-        if (normalizedPhone !== (existing.phone ?? '')) changes.phone = normalizedPhone;
-        if (cleanNote !== (existing.note ?? '')) changes.note = cleanNote;
-        if (Object.keys(changes).length > 1) await store.add('customerUpdated', changes);
-      } else {
-        const payload: KhataCollections['customerCreated'] = { name: cleanName };
-        if (normalizedPhone !== '') payload.phone = normalizedPhone;
-        if (cleanNote !== '') payload.note = cleanNote;
-        await store.add('customerCreated', payload);
-      }
-
-      await onChanged();
-      goBack();
-    } catch {
-      setFailed(true);
-    } finally {
-      setSaving(false);
+    else if (cleanName.length > LIMITS.name) next.name = 'khata.addCustomer.nameTooLong';
+    else if (
+      normalizedPhone !== '' &&
+      validatePakistaniPhone(normalizedPhone) &&
+      derived.customers.some(
+        (c) =>
+          c.id !== existing?.id &&
+          nameKey(c.name) === nameKey(cleanName) &&
+          normalizePhone(c.phone ?? '') === normalizedPhone,
+      )
+    ) {
+      next.name = 'khata.addCustomer.duplicate';
     }
+    if (cleanPhone !== '' && !validatePakistaniPhone(cleanPhone)) next.phone = 'khata.addCustomer.phoneInvalid';
+    if (cleanNote.length > LIMITS.note) next.note = 'khata.addCustomer.noteTooLong';
+    setErrors(next);
+    if (next.name || next.phone || next.note) return;
+
+    setFailed(false);
+    await guard.run(async () => {
+      try {
+        if (existing) {
+          const changes: KhataCollections['customerUpdated'] = { customerId: existing.id };
+          if (cleanName !== existing.name) changes.name = cleanName;
+          if (normalizedPhone !== (existing.phone ?? '')) changes.phone = normalizedPhone;
+          if (cleanNote !== (existing.note ?? '')) changes.note = cleanNote;
+          if (Object.keys(changes).length > 1) await store.add('customerUpdated', changes);
+        } else {
+          const payload: KhataCollections['customerCreated'] = { name: cleanName };
+          if (normalizedPhone !== '') payload.phone = normalizedPhone;
+          if (cleanNote !== '') payload.note = cleanNote;
+          await store.add('customerCreated', payload);
+        }
+        await onChanged();
+        goBack();
+      } catch {
+        setFailed(true);
+      }
+    });
   }
 
   return (
@@ -80,72 +105,41 @@ export function AddCustomerScreen({
       />
 
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
-        <div>
-          <label htmlFor="customer-name" className={label}>
-            {t('khata.addCustomer.nameLabel')}
-          </label>
-          <input
-            id="customer-name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            autoComplete="off"
-            aria-invalid={errors.name ? true : undefined}
-            aria-describedby={errors.name ? 'customer-name-error' : undefined}
-            className={input}
-          />
-          {errors.name && (
-            <p id="customer-name-error" role="alert" className={fieldError}>
-              {t(errors.name)}
-            </p>
-          )}
-        </div>
+        <TextField
+          label={t('khata.addCustomer.nameLabel')}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          maxLength={LIMITS.name}
+          autoComplete="off"
+          error={errors.name ? t(errors.name, { max: LIMITS.name }) : undefined}
+        />
 
-        <div>
-          <label htmlFor="customer-phone" className={label}>
-            {t('khata.addCustomer.phoneLabel')}
-          </label>
-          <input
-            id="customer-phone"
-            type="tel"
-            inputMode="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder={t('khata.addCustomer.phonePlaceholder')}
-            autoComplete="off"
-            aria-invalid={errors.phone ? true : undefined}
-            aria-describedby={errors.phone ? 'customer-phone-error' : undefined}
-            className={input}
-          />
-          {errors.phone && (
-            <p id="customer-phone-error" role="alert" className={fieldError}>
-              {t(errors.phone)}
-            </p>
-          )}
-        </div>
+        <TextField
+          label={t('khata.addCustomer.phoneLabel')}
+          type="tel"
+          inputMode="tel"
+          dir="ltr"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          maxLength={LIMITS.phone}
+          placeholder={t('khata.addCustomer.phonePlaceholder')}
+          autoComplete="off"
+          error={errors.phone ? t(errors.phone) : undefined}
+        />
 
-        <div>
-          <label htmlFor="customer-note" className={label}>
-            {t('khata.addCustomer.noteLabel')}
-          </label>
-          <textarea
-            id="customer-note"
-            rows={3}
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            className={input}
-          />
-        </div>
+        <TextAreaField
+          label={t('khata.addCustomer.noteLabel')}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          maxLength={LIMITS.note}
+          error={errors.note ? t(errors.note, { max: LIMITS.note }) : undefined}
+        />
 
-        {failed && (
-          <p role="alert" className={fieldError}>
-            {t('khata.common.errorGeneric')}
-          </p>
-        )}
+        {failed && <Notice tone="error">{t('khata.common.errorGeneric')}</Notice>}
 
-        <button type="submit" disabled={saving} className={primaryButton}>
+        <Button type="submit" loading={guard.busy}>
           {t('khata.addCustomer.saveButton')}
-        </button>
+        </Button>
       </form>
     </div>
   );

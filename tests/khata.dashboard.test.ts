@@ -230,7 +230,7 @@ describe('customer details and settings', () => {
   });
 
   it('settings: defaults, then latest value of each field wins in any arrival order', () => {
-    expect(deriveSettings([])).toEqual({ shopName: 'My Shop', language: 'en' });
+    expect(deriveSettings([])).toEqual({ shopName: 'My Shop', language: 'en', demoDataLoaded: false });
 
     const records = [
       rec('settingsUpdated', { shopName: 'First' }, 's1', 1),
@@ -239,7 +239,11 @@ describe('customer details and settings', () => {
     ];
     fc.assert(
       fc.property(fc.integer(), (seed) => {
-        expect(deriveSettings(shuffle(records, seed))).toEqual({ shopName: 'Second', language: 'ur' });
+        expect(deriveSettings(shuffle(records, seed))).toEqual({
+          shopName: 'Second',
+          language: 'ur',
+          demoDataLoaded: false,
+        });
       }),
     );
   });

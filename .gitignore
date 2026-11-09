@@ -1,6 +1,5 @@
-# Dependencies
+# Dependencies (package-lock.json IS committed, so installs are reproducible)
 node_modules/
-package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
@@ -32,6 +31,8 @@ npm-debug.log*
 
 # Testing
 coverage/
+e2e-output/
+.tmp-results.json
 
 # PWA
 dev-dist/

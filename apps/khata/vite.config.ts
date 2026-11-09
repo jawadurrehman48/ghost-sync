@@ -12,9 +12,11 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
+        id: '/',
         name: 'Khata - Credit Ledger',
         short_name: 'Khata',
-        description: 'Offline-first credit ledger for small shops',
+        description: 'Offline-first credit ledger (udhaar book) for small shops',
+        categories: ['finance', 'business'],
         start_url: '/',
         scope: '/',
         display: 'standalone',
@@ -28,29 +30,12 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        // Everything the app needs, including the bundled Urdu font (woff2), is
+        // precached on first visit, so the whole app works offline afterwards.
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         // Single-page app: any navigation works offline by serving the cached shell.
         navigateFallback: 'index.html',
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-stylesheets',
-              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-webfonts',
-              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-        ],
+        cleanupOutdatedCaches: true,
       },
     }),
   ],

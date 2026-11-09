@@ -27,36 +27,3 @@ export interface SyncedRow<P> extends Record<P> {
   _syncStatus: 'pending' | 'synced';
 }
 
-/**
- * A collections map: each key is a collection name, each value is the
- * payload type for that collection. Apps define this as a type, e.g.
- *
- *   type KhataCollections = {
- *     customers: { name: string; phone?: string };
- *     transactions: { customerId: string; amount: number };
- *   };
- *
- * Note: use `type` not `interface` so the generic constraints resolve cleanly.
- */
-export type Collections = { [key: string]: any };
-
-/**
- * Helper: extract the payload type for a specific collection.
- */
-export type CollectionPayload<C, K extends keyof C> = C[K];
-
-/**
- * Helper: convert a Collections interface into a map of
- * collection name → Record<P>.
- */
-export type CollectionRecords<C> = {
-  [K in keyof C]: Record<C[K]>;
-};
-
-/**
- * Helper: convert a Collections interface into a map of
- * collection name → SyncedRow<P>.
- */
-export type CollectionSyncedRows<C> = {
-  [K in keyof C]: SyncedRow<C[K]>;
-};

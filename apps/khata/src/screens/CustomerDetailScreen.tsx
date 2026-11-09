@@ -1,23 +1,18 @@
 import { useMemo } from 'react';
 import {
+  Button,
+  Card,
+  EmptyState,
   ScreenHeader,
   formatDateDMY,
+  formatPhone,
   normalizePhone,
   useTranslation,
   validatePakistaniPhone,
 } from '@skeleton/core';
 import { Money, balanceStatusKey } from '../components/Money';
+import { ReportsIcon } from '../components/NavIcons';
 import { displayShopName } from '../components/shopName';
-import {
-  card,
-  creditButton,
-  mutedText,
-  neutralButton,
-  paymentButton,
-  secondaryButton,
-  sectionTitle,
-  smallButton,
-} from '../components/styles';
 import { deriveBalance } from '../khata.reducers';
 import { buildSmsMessage, buildSmsUrl, buildWhatsAppUrl } from '../utils/reminder';
 import type { ScreenProps } from './types';
@@ -48,7 +43,7 @@ export function CustomerDetailScreen({
     return (
       <div>
         <ScreenHeader title={t('khata.customers.title')} onBack={backToList} backLabel={t('khata.common.back')} />
-        <p className={`${card} ${mutedText}`}>{t('khata.customerDetail.notFound')}</p>
+        <EmptyState title={t('khata.customerDetail.notFound')} actionLabel={t('khata.common.back')} onAction={backToList} />
       </div>
     );
   }
@@ -71,126 +66,127 @@ export function CustomerDetailScreen({
     <div className="space-y-4">
       <ScreenHeader title={customer.name} onBack={backToList} backLabel={t('khata.common.back')} />
 
-      <section className={card} aria-labelledby="balance-heading">
-        <p id="balance-heading" className={mutedText}>
+      <Card aria-labelledby="balance-heading">
+        <p id="balance-heading" className="text-sm text-gray-600">
           {t('khata.customerDetail.balance')}
         </p>
         <div className="flex flex-wrap items-baseline gap-x-3">
-          <Money paisa={balance} tone="balance" className="text-4xl" />
+          <Money paisa={balance} tone="balance" size="hero" />
           <span className="text-sm font-medium text-gray-700">{t(balanceStatusKey(balance))}</span>
         </div>
         <div className="mt-3 flex items-center justify-between gap-3">
           {customer.phone ? (
             <span dir="ltr" className="text-sm text-gray-700">
-              {customer.phone}
+              {formatPhone(customer.phone)}
             </span>
           ) : (
             <span />
           )}
-          <button
-            type="button"
+          <Button
+            size="sm"
+            variant="neutral"
             onClick={() => navigate({ name: 'editCustomer', customerId })}
-            className={smallButton}
           >
             {t('khata.customerDetail.editButton')}
-          </button>
+          </Button>
         </div>
-        {customer.note ? <p className="mt-2 text-sm text-gray-700">{customer.note}</p> : null}
-      </section>
+        {customer.note ? (
+          <p className="mt-2 whitespace-pre-wrap break-words text-sm text-gray-700">{customer.note}</p>
+        ) : null}
+      </Card>
 
       <div className="grid grid-cols-2 gap-3">
-        <button
-          type="button"
-          onClick={() => navigate({ name: 'addEntry', customerId, type: 'credit' })}
-          className={creditButton}
-        >
+        <Button variant="danger" onClick={() => navigate({ name: 'addEntry', customerId, type: 'credit' })}>
           {t('khata.customerDetail.creditButton')}
-        </button>
-        <button
-          type="button"
-          onClick={() => navigate({ name: 'addEntry', customerId, type: 'payment' })}
-          className={paymentButton}
-        >
+        </Button>
+        <Button variant="success" onClick={() => navigate({ name: 'addEntry', customerId, type: 'payment' })}>
           {t('khata.customerDetail.paymentButton')}
-        </button>
+        </Button>
       </div>
 
       {balance > 0 &&
         (canRemind ? (
           <div className="space-y-2">
-            <a
-              href={buildWhatsAppUrl(reminder)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={secondaryButton}
-            >
+            <Button variant="secondary" href={buildWhatsAppUrl(reminder)} target="_blank">
               {t('khata.customerDetail.reminderButton')}
-            </a>
-            <a href={buildSmsUrl({ phone, message: buildSmsMessage(reminder) })} className={neutralButton}>
+            </Button>
+            <Button variant="neutral" href={buildSmsUrl({ phone, message: buildSmsMessage(reminder) })}>
               {t('khata.customerDetail.reminderSms')}
-            </a>
+            </Button>
           </div>
         ) : (
-          <p className={`${card} ${mutedText}`}>{t('khata.customerDetail.noPhone')}</p>
+          <Card tone="muted" className="text-sm text-gray-600">
+            {t('khata.customerDetail.noPhone')}
+          </Card>
         ))}
 
       <section aria-labelledby="history-heading">
-        <h3 id="history-heading" className={sectionTitle}>
+        <h3 id="history-heading" className="mb-2 text-base font-semibold text-gray-800">
           {t('khata.customerDetail.history')}
         </h3>
         {history.length === 0 ? (
-          <p className={`${card} ${mutedText}`}>{t('khata.customerDetail.noTransactions')}</p>
+          <EmptyState
+            icon={<ReportsIcon />}
+            title={t('khata.customerDetail.noTransactions')}
+            description={t('khata.customerDetail.firstEntryHint')}
+            actionLabel={t('khata.customerDetail.creditButton')}
+            onAction={() => navigate({ name: 'addEntry', customerId, type: 'credit' })}
+          />
         ) : (
           <ul className="space-y-2">
             {history.map((entry) => {
               const isCredit = entry.type === 'credit';
               return (
-                <li key={entry.id} className={`${card} ${entry.reversed ? 'bg-gray-50' : ''}`}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <span
-                        className={`text-sm font-semibold ${
-                          entry.reversed ? 'text-gray-600' : isCredit ? 'text-red-700' : 'text-green-700'
-                        }`}
-                      >
-                        {t(isCredit ? 'khata.common.credit' : 'khata.common.payment')}
-                      </span>
-                      <span dir="ltr" className="block text-start text-sm text-gray-600">
-                        {formatDateDMY(entry.date)}
-                      </span>
+                <li key={entry.id}>
+                  <Card tone={entry.reversed ? 'muted' : 'default'}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <span
+                          className={`text-sm font-semibold ${
+                            entry.reversed ? 'text-gray-600' : isCredit ? 'text-red-700' : 'text-green-700'
+                          }`}
+                        >
+                          {t(isCredit ? 'khata.common.credit' : 'khata.common.payment')}
+                        </span>
+                        <span dir="ltr" className="block text-start text-sm text-gray-600">
+                          {formatDateDMY(entry.date)}
+                        </span>
+                      </div>
+                      <Money
+                        paisa={entry.amountPaisa}
+                        tone={entry.reversed ? 'muted' : isCredit ? 'owed' : 'received'}
+                        strikethrough={entry.reversed}
+                        size="lg"
+                      />
                     </div>
-                    <Money
-                      paisa={entry.amountPaisa}
-                      tone={entry.reversed ? 'muted' : isCredit ? 'owed' : 'received'}
-                      strikethrough={entry.reversed}
-                      className="text-lg"
-                    />
-                  </div>
 
-                  {entry.note ? <p className="mt-1 text-sm text-gray-700">{entry.note}</p> : null}
+                    {entry.note ? (
+                      <p className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-700">{entry.note}</p>
+                    ) : null}
 
-                  {entry.reversed ? (
-                    <p className="mt-2 text-sm text-gray-700">
-                      <span className="font-semibold">{t('khata.customerDetail.reversed')}</span>
-                      {entry.reverseReason ? (
-                        <span> · {t('khata.customerDetail.reversedReason', { reason: entry.reverseReason })}</span>
-                      ) : null}
-                    </p>
-                  ) : (
-                    <div className="mt-2 flex items-center justify-between gap-3">
-                      <span className="text-sm text-gray-600">
-                        {t('khata.common.balance')}:{' '}
-                        <Money paisa={entry.runningBalancePaisa} tone="balance" className="text-sm" />
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => navigate({ name: 'reverseEntry', entryId: entry.id, customerId })}
-                        className={smallButton}
-                      >
-                        {t('khata.customerDetail.correctButton')}
-                      </button>
-                    </div>
-                  )}
+                    {entry.reversed ? (
+                      <p className="mt-2 break-words text-sm text-gray-700">
+                        <span className="font-semibold">{t('khata.customerDetail.reversed')}</span>
+                        {entry.reverseReason ? (
+                          <span> · {t('khata.customerDetail.reversedReason', { reason: entry.reverseReason })}</span>
+                        ) : null}
+                      </p>
+                    ) : (
+                      <div className="mt-2 flex items-center justify-between gap-3">
+                        <span className="text-sm text-gray-600">
+                          {t('khata.common.balance')}:{' '}
+                          <Money paisa={entry.runningBalancePaisa} tone="balance" size="sm" />
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="neutral"
+                          onClick={() => navigate({ name: 'reverseEntry', entryId: entry.id, customerId })}
+                        >
+                          {t('khata.customerDetail.correctButton')}
+                        </Button>
+                      </div>
+                    )}
+                  </Card>
                 </li>
               );
             })}

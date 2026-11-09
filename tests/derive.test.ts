@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 import * as fc from 'fast-check';
 import { deriveState, type SkeletonRecord } from '@skeleton/core';
 
@@ -21,7 +21,7 @@ describe('deriveState (property-based)', () => {
           (state ?? 0) + r.payload.value;
 
         const expected = records.reduce((acc, r) => sumReducer(acc, r), 0 as number | undefined);
-        const actual = deriveState(records, sumReducer as any, 0);
+        const actual = deriveState(records, sumReducer, 0);
 
         return actual === expected;
       }),
@@ -34,8 +34,8 @@ describe('deriveState (property-based)', () => {
         const maxReducer = (state: number | undefined, r: SkeletonRecord<{ value: number }>) =>
           state === undefined ? r.payload.value : Math.max(state, r.payload.value);
 
-        const first = deriveState(records, maxReducer as any);
-        const second = deriveState(records, maxReducer as any);
+        const first = deriveState(records, maxReducer);
+        const second = deriveState(records, maxReducer);
 
         return first === second;
       }),
@@ -50,8 +50,8 @@ describe('deriveState (property-based)', () => {
           (state ?? 0) + r.payload.value;
 
         const shuffled = [...records].reverse(); // reverse order
-        const originalResult = deriveState(records, sumReducer as any, 0);
-        const shuffledResult = deriveState(shuffled, sumReducer as any, 0);
+        const originalResult = deriveState(records, sumReducer, 0);
+        const shuffledResult = deriveState(shuffled, sumReducer, 0);
 
         return originalResult === shuffledResult;
       }),
@@ -62,7 +62,7 @@ describe('deriveState (property-based)', () => {
     fc.assert(
       fc.property(fc.constant([]), (records) => {
         const reducer = (state: number | undefined) => state ?? 0;
-        const result = deriveState(records, reducer as any, 0);
+        const result = deriveState(records, reducer, 0);
         return result === 0;
       }),
     );
@@ -75,7 +75,7 @@ describe('deriveState (property-based)', () => {
           (state ?? 0) + r.payload.value;
 
         const expected = records.reduce((acc, r) => sumReducer(acc, r), initial as number | undefined);
-        const actual = deriveState(records, sumReducer as any, initial);
+        const actual = deriveState(records, sumReducer, initial);
 
         return actual === expected;
       }),

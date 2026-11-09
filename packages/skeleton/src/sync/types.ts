@@ -1,3 +1,6 @@
+import type { SyncableStore } from '../storage/store';
+import type { SyncAdapter } from './adapter';
+
 /**
  * Sync status states reported by the sync engine.
  */
@@ -15,10 +18,11 @@ export type SyncStatusListener = (status: SyncStatus) => void;
 
 /**
  * Configuration for the sync engine.
+ * Any store works, because the engine only needs the sync-internal methods.
  */
 export interface SyncEngineConfig {
-  adapter: import('../sync/adapter').SyncAdapter;
-  store: import('../storage/store').Store<any>;
+  adapter: SyncAdapter;
+  store: SyncableStore;
   maxRetries?: number;
   baseDelayMs?: number;
   maxDelayMs?: number;

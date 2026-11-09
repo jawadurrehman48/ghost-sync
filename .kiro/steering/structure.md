@@ -34,23 +34,26 @@ ghost-sync/
 │           ├── utils/        # Formatting + validation shared by all apps
 │           │   ├── money.ts      # formatPaisa, paisaFromRupees, parseWholeRupees
 │           │   ├── phone.ts      # validatePakistaniPhone, normalizePhone
-│           │   ├── date.ts       # todayISO (local), isValidISODate, formatDateDMY, monthRange
+│           │   ├── date.ts       # todayISO (local), isValidISODate, formatDateDMY, addDays, weekRange, monthRange
 │           │   └── digits.ts     # toAsciiDigits (Urdu / Arabic-Indic digits)
+│           ├── theme.css     # brand tokens, bundled offline Urdu font, RTL line-height, animations
 │           ├── hooks/
 │           │   ├── useOnlineStatus.ts   # React hook for online/offline
-│           │   └── useStoreSnapshot.ts  # load local data; reload after writes and sync
+│           │   ├── useStoreSnapshot.ts  # load local data; reload after writes and sync
+│           │   └── useSubmitGuard.ts    # one save per tap (no double entries)
 │           ├── i18n/
 │           │   ├── index.ts      # i18n init, setLanguage, registerAppTranslations
 │           │   ├── useLanguage.ts # React hook for language state
 │           │   └── locales/
 │           │       ├── en.json   # Shared skeleton keys (English)
 │           │       └── ur.json   # Shared skeleton keys (Urdu)
-│           └── ui/               # UI shell components
-│               ├── AppShell.tsx        # Phone-width column: header + content
-│               ├── SyncStatusBadge.tsx # Sync status pill
-│               ├── LanguageToggle.tsx  # EN ↔ UR toggle
-│               ├── BottomNav.tsx       # Bottom tab bar (56px tabs)
-│               └── ScreenHeader.tsx    # Screen title + RTL-aware back button
+│           └── ui/               # UI kit (logical classes, 44px+ targets)
+│               ├── AppShell.tsx        # Phone-width column: header (logo, sync, language) + content
+│               ├── BottomNav.tsx, ScreenHeader.tsx, FloatingActionButton.tsx
+│               ├── Button.tsx, Card.tsx, TextField.tsx (+ TextAreaField)
+│               ├── ConfirmDialog.tsx, EmptyState.tsx, Notice.tsx, LoadingState.tsx, Spinner.tsx
+│               ├── ErrorBoundary.tsx, GroupedBarChart.tsx (SVG, no chart library)
+│               └── SyncStatusBadge.tsx, LanguageToggle.tsx
 │
 ├── apps/
 │   ├── khata/                # Credit ledger app (complete)
@@ -98,12 +101,15 @@ ghost-sync/
 
 3. **Each app registers its own translations.** Apps call `registerAppTranslations()` at startup with their app-specific keys, all under an app prefix (e.g. `khata.`). Skeleton keys are shared and included automatically. App keys cannot overwrite skeleton keys.
 
-4. **Each app's `index.css` must include the skeleton source path** so Tailwind scans skeleton components for class names:
+4. **Each app's `index.css` must import the shared theme and include the skeleton source path** so Tailwind generates the skeleton's classes and the Urdu font is bundled:
    ```css
    @import "tailwindcss";
+   @import "../../../packages/skeleton/src/theme.css";
    @source "../../../packages/skeleton/src";
    ```
-   Without this, skeleton UI components (AppShell, SyncStatusBadge, LanguageToggle, BottomNav) will render unstyled.
+   Without these, skeleton UI components render unstyled. Add `woff2` to the PWA `globPatterns` so the bundled Urdu font is precached for offline use. Do not load fonts from Google (they would be missing offline).
+
+7. **Use the UI kit, don't restyle by hand.** Buttons, cards, fields, dialogs and empty states come from `@skeleton/core` so every screen looks the same. Wrap saves in `useSubmitGuard().run(...)` so a double tap can never append a duplicate record.
 
 5. **The barrel `packages/skeleton/src/index.ts` exports everything.** Apps import from `@skeleton/core` only. They never import `dexie`, `i18next` or `react-i18next` (use the re-exported `useTranslation`), never touch IndexedDB, and never make network calls. `tests/khata.architecture.test.ts` enforces this.
 

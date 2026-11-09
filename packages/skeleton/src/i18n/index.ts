@@ -30,12 +30,21 @@ i18n.use(initReactI18next).init({
   },
 });
 
+/** Set dir and lang on <html>, so the layout and the Urdu font follow the language. */
+function applyDocumentDirection(lng: string): void {
+  if (typeof document === 'undefined') return;
+  document.documentElement.dir = lng === 'ur' ? 'rtl' : 'ltr';
+  document.documentElement.lang = lng;
+}
+
+// i18next does not emit 'languageChanged' for the language it STARTS with, so
+// without this a saved Urdu choice would load right-to-left text in a
+// left-to-right page, without the Urdu font, until the user toggled twice.
+applyDocumentDirection(i18n.language || 'en');
+
 // Update document direction and persist language on change
 i18n.on('languageChanged', (lng: string) => {
-  if (typeof document !== 'undefined') {
-    document.documentElement.dir = lng === 'ur' ? 'rtl' : 'ltr';
-    document.documentElement.lang = lng;
-  }
+  applyDocumentDirection(lng);
   if (typeof localStorage !== 'undefined') {
     try {
       localStorage.setItem(LANG_KEY, lng);

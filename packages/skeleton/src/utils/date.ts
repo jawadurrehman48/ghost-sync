@@ -35,6 +35,41 @@ export function formatDateDMY(iso: string): string {
   return `${d}/${m}/${y}`;
 }
 
+const MS_PER_DAY = 86_400_000;
+
+/** Whole days since 1970-01-01 for a VALID "YYYY-MM-DD" (calendar maths in UTC, so no DST surprises). */
+function toDayNumber(iso: string): number {
+  const [y, m, d] = iso.split('-').map(Number);
+  const dt = new Date(0);
+  dt.setUTCFullYear(y, m - 1, d);
+  return Math.round(dt.getTime() / MS_PER_DAY);
+}
+
+function fromDayNumber(n: number): string {
+  const dt = new Date(n * MS_PER_DAY);
+  return `${pad(dt.getUTCFullYear(), 4)}-${pad(dt.getUTCMonth() + 1)}-${pad(dt.getUTCDate())}`;
+}
+
+/** Number of days from `from` to `to` (negative if `to` is earlier). Both must be valid ISO dates. */
+export function daysBetween(from: string, to: string): number {
+  return toDayNumber(to) - toDayNumber(from);
+}
+
+/** The ISO date `days` after `iso` (negative goes back). Must be given a valid ISO date. */
+export function addDays(iso: string, days: number): string {
+  return fromDayNumber(toDayNumber(iso) + days);
+}
+
+/**
+ * The 7-day week containing `now`, as ISO dates. Weeks start on Monday by
+ * default (Pakistan's working week); pass 0 for Sunday.
+ */
+export function weekRange(now: Date = new Date(), weekStartsOn: 0 | 1 = 1): { from: string; to: string } {
+  const offset = (now.getDay() - weekStartsOn + 7) % 7;
+  const from = addDays(toISODate(now), -offset);
+  return { from, to: addDays(from, 6) };
+}
+
 /** First and last day of the month containing `now`, as "YYYY-MM-DD". */
 export function monthRange(now: Date = new Date()): { from: string; to: string } {
   const y = now.getFullYear();
