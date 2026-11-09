@@ -1,5 +1,4 @@
-import { i18n } from '@skeleton/core';
-import { formatPaisa } from './money';
+import { i18n, formatPaisa } from '@skeleton/core';
 
 export interface ReminderOpts {
   phone: string;          // normalized Pakistani number: 03XXXXXXXXX

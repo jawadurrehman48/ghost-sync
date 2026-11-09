@@ -1,11 +1,12 @@
+import { toISODate } from '@skeleton/core';
 import type { Store } from '@skeleton/core';
 import type { KhataCollections } from '../khata.types';
 
-/** Helper: get an ISO date string for N days ago. */
+/** Local calendar date (YYYY-MM-DD) N days before today. */
 function daysAgo(days: number): string {
   const d = new Date();
   d.setDate(d.getDate() - days);
-  return d.toISOString().slice(0, 10); // YYYY-MM-DD
+  return toISODate(d);
 }
 
 /**

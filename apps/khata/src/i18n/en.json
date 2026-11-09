@@ -1,1 +1,120 @@
-{"khata": {"appName": "Khata", "nav": {"dashboard": "Dashboard", "customers": "Customers", "reports": "Reports", "settings": "Settings"}, "dashboard": {"totalOutstanding": "Total Outstanding", "creditToday": "Credit Given Today", "paymentsToday": "Payments Received Today", "topDebtors": "Top Debtors", "noDebtors": "No one owes money right now"}, "customers": {"title": "Customers", "search": "Search name or phone", "addButton": "Add Customer", "emptyState": "No customers yet. Tap Add Customer to create one."}, "addCustomer": {"title": "Add Customer", "nameLabel": "Name", "phonePlaceholder": "03XX-XXXXXXX", "noteLabel": "Note (optional)", "saveButton": "Save Customer", "nameRequired": "Name is required", "phoneInvalid": "Enter a valid Pakistani mobile number (03XXXXXXXXX)"}, "customerDetail": {"balance": "Balance", "creditButton": "Credit Given", "paymentButton": "Payment Received", "reminderButton": "Send Reminder", "history": "Transaction History", "reversed": "Reversed", "correctButton": "Correct Mistake", "noTransactions": "No transactions yet"}, "addEntry": {"creditTitle": "Credit Given", "paymentTitle": "Payment Received", "amountLabel": "Amount (Rs)", "noteLabel": "Note (optional)", "dateLabel": "Date", "saveButton": "Save", "amountRequired": "Amount is required", "amountInvalid": "Enter a valid amount (minimum Rs 1)"}, "reverseEntry": {"title": "Correct Mistake", "originalEntry": "You are reversing:", "reasonLabel": "Reason for reversal (required)", "confirmButton": "Confirm Reversal", "reasonRequired": "Reason is required"}, "reports": {"title": "Reports", "fromLabel": "From", "toLabel": "To", "creditGiven": "Credit Given", "paymentsReceived": "Payments Received", "net": "Net"}, "settings": {"title": "Settings", "shopNameLabel": "Shop Name", "languageLabel": "Language", "exportButton": "Export CSV", "demoButton": "Load Demo Data", "demoConfirm": "This will add sample customers and transactions. Continue?", "demoWarning": "Adds sample data for demonstration"}, "reminder": {"whatsappMessage": "Hello {{customerName}}! Reminder from {{shopName}}: your outstanding balance is {{amount}}. Please make a payment at your earliest convenience. Thank you.", "smsMessage": "Hello {{customerName}}! Reminder from {{shopName}}: your outstanding balance is {{amount}}. Please pay when you can. Thank you."}, "common": {"back": "Back", "cancel": "Cancel", "save": "Save", "balance": "Balance", "credit": "Credit", "payment": "Payment"}}}
+{
+  "khata": {
+    "appName": "Khata",
+    "nav": {
+      "dashboard": "Home",
+      "customers": "Customers",
+      "reports": "Reports",
+      "settings": "Settings",
+      "ariaLabel": "Main menu"
+    },
+    "dashboard": {
+      "totalOutstanding": "Total Outstanding",
+      "today": "Today",
+      "creditToday": "Credit Given",
+      "paymentsToday": "Payments Received",
+      "topDebtors": "Customers Who Owe the Most",
+      "noDebtors": "No one owes money right now"
+    },
+    "customers": {
+      "title": "Customers",
+      "search": "Search name or phone",
+      "addButton": "Add Customer",
+      "emptyState": "No customers yet. Tap Add Customer to create one.",
+      "noResults": "No customer found",
+      "owes": "Owes",
+      "settled": "Settled",
+      "advance": "Advance"
+    },
+    "addCustomer": {
+      "title": "Add Customer",
+      "editTitle": "Edit Customer",
+      "nameLabel": "Name",
+      "phoneLabel": "Phone (optional)",
+      "phonePlaceholder": "03XX-XXXXXXX",
+      "noteLabel": "Note (optional)",
+      "saveButton": "Save Customer",
+      "nameRequired": "Name is required",
+      "phoneInvalid": "Enter a valid Pakistani mobile number (03XXXXXXXXX)"
+    },
+    "customerDetail": {
+      "balance": "Balance",
+      "creditButton": "Credit Given",
+      "paymentButton": "Payment Received",
+      "reminderButton": "Send Reminder",
+      "reminderSms": "Send by SMS",
+      "noPhone": "Add a phone number to send reminders",
+      "history": "Transaction History",
+      "reversed": "Reversed",
+      "reversedReason": "Reason: {{reason}}",
+      "correctButton": "Correct Mistake",
+      "noTransactions": "No transactions yet",
+      "editButton": "Edit",
+      "notFound": "Customer not found"
+    },
+    "addEntry": {
+      "creditTitle": "Credit Given",
+      "paymentTitle": "Payment Received",
+      "customerLabel": "Customer",
+      "amountLabel": "Amount (Rs)",
+      "noteLabel": "Note (optional)",
+      "dateLabel": "Date",
+      "saveButton": "Save",
+      "amountRequired": "Amount is required",
+      "amountInvalid": "Enter a whole number of rupees (minimum Rs 1)",
+      "dateRequired": "Enter a valid date"
+    },
+    "reverseEntry": {
+      "title": "Correct Mistake",
+      "originalEntry": "You are reversing this entry:",
+      "typeLabel": "Type",
+      "reasonLabel": "Reason for reversal (required)",
+      "confirmButton": "Confirm Reversal",
+      "reasonRequired": "Reason is required",
+      "alreadyReversed": "This entry is already reversed",
+      "notFound": "Entry not found"
+    },
+    "reports": {
+      "title": "Reports",
+      "fromLabel": "From",
+      "toLabel": "To",
+      "creditGiven": "Credit Given",
+      "paymentsReceived": "Payments Received",
+      "net": "Net (payments minus credit)",
+      "rangeInvalid": "The start date must not be after the end date"
+    },
+    "settings": {
+      "title": "Settings",
+      "shopNameLabel": "Shop Name",
+      "defaultShopName": "My Shop",
+      "shopNameRequired": "Shop name cannot be empty",
+      "languageLabel": "Language",
+      "exportButton": "Download Data (CSV)",
+      "demoButton": "Load Demo Data",
+      "demoConfirm": "This will add sample customers and transactions. Continue?",
+      "demoConfirmYes": "Yes, add sample data",
+      "demoWarning": "Adds sample data for demonstration",
+      "demoLoaded": "Sample data added",
+      "saved": "Saved"
+    },
+    "reminder": {
+      "whatsappMessage": "Hello {{customerName}}! Reminder from {{shopName}}: your outstanding balance is {{amount}}. Please make a payment at your earliest convenience. Thank you.",
+      "smsMessage": "Hello {{customerName}}! Reminder from {{shopName}}: your outstanding balance is {{amount}}. Please pay when you can. Thank you."
+    },
+    "common": {
+      "back": "Back",
+      "cancel": "Cancel",
+      "save": "Save",
+      "balance": "Balance",
+      "credit": "Credit",
+      "payment": "Payment",
+      "loading": "Loading…",
+      "note": "Note",
+      "amount": "Amount",
+      "date": "Date",
+      "type": "Type",
+      "errorGeneric": "Something went wrong. Please try again.",
+      "retry": "Try again"
+    }
+  }
+}

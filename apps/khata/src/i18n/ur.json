@@ -1,1 +1,120 @@
-{"khata": {"appName": "کھاتہ", "nav": {"dashboard": "ڈیش بورڈ", "customers": "گاہک", "reports": "رپورٹس", "settings": "ترتیبات"}, "dashboard": {"totalOutstanding": "کل بقایا", "creditToday": "آج کا ادھار", "paymentsToday": "آج کی ادائیگی", "topDebtors": "زیادہ بقایا رکھنے والے گاہک", "noDebtors": "کسی کا بقایا نہیں"}, "customers": {"title": "گاہک", "search": "نام یا فون نمبر تلاش کریں", "addButton": "گاہک شامل کریں", "emptyState": "ابھی کوئی گاہک نہیں۔ شامل کرنے کے لیے نیچے دبائیں۔"}, "addCustomer": {"title": "نیا گاہک", "nameLabel": "نام", "phonePlaceholder": "03XX-XXXXXXX", "noteLabel": "نوٹ (اختیاری)", "saveButton": "محفوظ کریں", "nameRequired": "نام ضروری ہے", "phoneInvalid": "درست پاکستانی موبائل نمبر درج کریں (03XXXXXXXXX)"}, "customerDetail": {"balance": "بقایا", "creditButton": "ادھار دیں", "paymentButton": "ادائیگی لیں", "reminderButton": "یاد دہانی بھیجیں", "history": "لین دین کی تفصیل", "reversed": "منسوخ", "correctButton": "غلطی ٹھکریں", "noTransactions": "ابھی کوئی لین دین نہیں"}, "addEntry": {"creditTitle": "ادھار دیں", "paymentTitle": "ادائیگی لیں", "amountLabel": "رقم (روپے)", "noteLabel": "نوٹ (اختیاری)", "dateLabel": "تاریخ", "saveButton": "محفوظ کریں", "amountRequired": "رقم ضروری ہے", "amountInvalid": "درست رقم درج کریں (کم از کم 1 روپہ)"}, "reverseEntry": {"title": "غلطی ٹھکریں", "originalEntry": "آپ یہ اندراج منسوخ کر رہے ہیں:", "reasonLabel": "منسوخی کی وجہ (ضروری)", "confirmButton": "منسوخری کی تصدیق", "reasonRequired": "وجہ درج کرنا ضروری ہے"}, "reports": {"title": "رپورٹس", "fromLabel": "سے", "toLabel": "تک", "creditGiven": "ادھار دیا", "paymentsReceived": "ادائیگی وصول ہوئی", "net": "صافی"}, "settings": {"title": "ترتیبات", "shopNameLabel": "دکان کا نام", "languageLabel": "زبان", "exportButton": "CSV ڈاؤن لوڈ کریں", "demoButton": "نمونہ ڈیٹا لوڈ کریں", "demoConfirm": "یہ نمونہ گاہک اور لین دین شامل کرے گا۔ جاری رکھیں؟", "demoWarning": "نمونہ ڈیٹا شامل کرتا ہے"}, "reminder": {"whatsappMessage": "السلام علیکم {{customerName}}! {{shopName}} سے یاد دہانی: آپ کا بقایا {{amount}} ہے۔ برائے مہربانی ادائیگی کریں۔ شکریہ۔", "smsMessage": "السلام علیکم {{customerName}}! {{shopName}}: آپ کا بقایا {{amount}} ہے۔ برائے مہربانی ادائیگی کریں۔ شکریہ۔"}, "common": {"back": "واپس", "cancel": "منسوخ", "save": "محفوظ کریں", "balance": "بقایا", "credit": "ادھار", "payment": "ادائیگی"}}}
+{
+  "khata": {
+    "appName": "کھاتہ",
+    "nav": {
+      "dashboard": "ہوم",
+      "customers": "گاہک",
+      "reports": "رپورٹس",
+      "settings": "ترتیبات",
+      "ariaLabel": "مین مینو"
+    },
+    "dashboard": {
+      "totalOutstanding": "کل بقایا",
+      "today": "آج",
+      "creditToday": "ادھار دیا",
+      "paymentsToday": "ادائیگی ملی",
+      "topDebtors": "سب سے زیادہ بقایا والے گاہک",
+      "noDebtors": "ابھی کسی کا بقایا نہیں"
+    },
+    "customers": {
+      "title": "گاہک",
+      "search": "نام یا فون نمبر تلاش کریں",
+      "addButton": "گاہک شامل کریں",
+      "emptyState": "ابھی کوئی گاہک نہیں۔ شامل کرنے کے لیے اوپر والا بٹن دبائیں۔",
+      "noResults": "کوئی گاہک نہیں ملا",
+      "owes": "ادھار باقی",
+      "settled": "حساب برابر",
+      "advance": "پیشگی"
+    },
+    "addCustomer": {
+      "title": "نیا گاہک",
+      "editTitle": "گاہک کی معلومات بدلیں",
+      "nameLabel": "نام",
+      "phoneLabel": "فون نمبر (اختیاری)",
+      "phonePlaceholder": "03XX-XXXXXXX",
+      "noteLabel": "نوٹ (اختیاری)",
+      "saveButton": "محفوظ کریں",
+      "nameRequired": "نام لکھنا ضروری ہے",
+      "phoneInvalid": "درست موبائل نمبر لکھیں (03XXXXXXXXX)"
+    },
+    "customerDetail": {
+      "balance": "بقایا",
+      "creditButton": "ادھار دیں",
+      "paymentButton": "ادائیگی لیں",
+      "reminderButton": "یاد دہانی بھیجیں",
+      "reminderSms": "ایس ایم ایس سے بھیجیں",
+      "noPhone": "یاد دہانی بھیجنے کے لیے فون نمبر شامل کریں",
+      "history": "لین دین کی تفصیل",
+      "reversed": "منسوخ",
+      "reversedReason": "وجہ: {{reason}}",
+      "correctButton": "غلطی درست کریں",
+      "noTransactions": "ابھی کوئی لین دین نہیں",
+      "editButton": "ترمیم",
+      "notFound": "گاہک نہیں ملا"
+    },
+    "addEntry": {
+      "creditTitle": "ادھار دیں",
+      "paymentTitle": "ادائیگی لیں",
+      "customerLabel": "گاہک",
+      "amountLabel": "رقم (روپے)",
+      "noteLabel": "نوٹ (اختیاری)",
+      "dateLabel": "تاریخ",
+      "saveButton": "محفوظ کریں",
+      "amountRequired": "رقم لکھنا ضروری ہے",
+      "amountInvalid": "پورے روپے لکھیں (کم از کم 1 روپیہ)",
+      "dateRequired": "درست تاریخ لکھیں"
+    },
+    "reverseEntry": {
+      "title": "غلطی درست کریں",
+      "originalEntry": "آپ یہ اندراج منسوخ کر رہے ہیں:",
+      "typeLabel": "قسم",
+      "reasonLabel": "منسوخی کی وجہ (ضروری)",
+      "confirmButton": "منسوخی کی تصدیق کریں",
+      "reasonRequired": "وجہ لکھنا ضروری ہے",
+      "alreadyReversed": "یہ اندراج پہلے ہی منسوخ ہو چکا ہے",
+      "notFound": "اندراج نہیں ملا"
+    },
+    "reports": {
+      "title": "رپورٹس",
+      "fromLabel": "سے",
+      "toLabel": "تک",
+      "creditGiven": "ادھار دیا",
+      "paymentsReceived": "ادائیگی ملی",
+      "net": "خالص (ادائیگی منفی ادھار)",
+      "rangeInvalid": "شروع کی تاریخ آخری تاریخ کے بعد نہیں ہو سکتی"
+    },
+    "settings": {
+      "title": "ترتیبات",
+      "shopNameLabel": "دکان کا نام",
+      "defaultShopName": "میری دکان",
+      "shopNameRequired": "دکان کا نام خالی نہیں ہو سکتا",
+      "languageLabel": "زبان",
+      "exportButton": "ڈیٹا ڈاؤن لوڈ کریں (CSV)",
+      "demoButton": "نمونہ ڈیٹا شامل کریں",
+      "demoConfirm": "اس سے نمونے کے گاہک اور لین دین شامل ہو جائیں گے۔ جاری رکھیں؟",
+      "demoConfirmYes": "جی ہاں، شامل کریں",
+      "demoWarning": "دکھانے کے لیے نمونہ ڈیٹا شامل کرتا ہے",
+      "demoLoaded": "نمونہ ڈیٹا شامل ہو گیا",
+      "saved": "محفوظ ہو گیا"
+    },
+    "reminder": {
+      "whatsappMessage": "السلام علیکم {{customerName}}! {{shopName}} کی طرف سے یاد دہانی: آپ کا بقایا {{amount}} ہے۔ برائے مہربانی ادائیگی کر دیں۔ شکریہ۔",
+      "smsMessage": "السلام علیکم {{customerName}}! {{shopName}}: آپ کا بقایا {{amount}} ہے۔ برائے مہربانی ادائیگی کر دیں۔ شکریہ۔"
+    },
+    "common": {
+      "back": "واپس",
+      "cancel": "منسوخ کریں",
+      "save": "محفوظ کریں",
+      "balance": "بقایا",
+      "credit": "ادھار",
+      "payment": "ادائیگی",
+      "loading": "لوڈ ہو رہا ہے…",
+      "note": "نوٹ",
+      "amount": "رقم",
+      "date": "تاریخ",
+      "type": "قسم",
+      "errorGeneric": "کچھ غلط ہو گیا۔ دوبارہ کوشش کریں۔",
+      "retry": "دوبارہ کوشش کریں"
+    }
+  }
+}

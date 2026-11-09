@@ -90,6 +90,56 @@ export type Settings = {
   language: 'en' | 'ur';
 };
 
+export type ReportTotals = {
+  creditPaisa: number;
+  paymentsPaisa: number;
+  /** payments − credit. Positive = more collected than lent in the range. */
+  netPaisa: number;
+};
+
+export type CustomerRow = {
+  customer: CustomerInfo;
+  balancePaisa: number;
+};
+
+// ---------------------------------------------------------------------------
+// App data snapshot and navigation
+// ---------------------------------------------------------------------------
+
+type Rec<K extends keyof KhataCollections> = SkeletonRecord<KhataCollections[K]>;
+
+/** Every record in the local store, grouped by collection. */
+export type KhataData = {
+  customerCreated: Rec<'customerCreated'>[];
+  customerUpdated: Rec<'customerUpdated'>[];
+  creditGiven: Rec<'creditGiven'>[];
+  paymentReceived: Rec<'paymentReceived'>[];
+  entryReversed: Rec<'entryReversed'>[];
+  settingsUpdated: Rec<'settingsUpdated'>[];
+};
+
+/** Everything the screens display, derived from KhataData. */
+export type KhataDerived = {
+  customers: CustomerInfo[];
+  /** customerId → balance in paisa (missing = 0) */
+  balances: Map<string, number>;
+  settings: Settings;
+  dashboard: DashboardState;
+  /** Local date (YYYY-MM-DD) the derivation used as "today" */
+  today: string;
+};
+
+export type Screen =
+  | { name: 'dashboard' }
+  | { name: 'customerList' }
+  | { name: 'addCustomer' }
+  | { name: 'editCustomer'; customerId: string }
+  | { name: 'customerDetail'; customerId: string }
+  | { name: 'addEntry'; customerId: string; type: 'credit' | 'payment' }
+  | { name: 'reverseEntry'; entryId: string; customerId: string }
+  | { name: 'reports' }
+  | { name: 'settings' };
+
 // ---------------------------------------------------------------------------
 // Convenience aliases for record types used in reducers and tests
 // ---------------------------------------------------------------------------
