@@ -61,14 +61,23 @@ export function setLanguage(lng: Language): void {
  * Skeleton keys take precedence — app keys with the same name will NOT
  * overwrite existing skeleton keys (addResourceBundle with overwrite: false).
  *
+ * Accepts both nested objects (i18next native format) and flat dot-separated keys.
+ *
  * @example
+ * // Nested format (from JSON import):
  * registerAppTranslations({
- *   en: { 'khata.title': 'Khata Ledger', 'khata.addCustomer': 'Add Customer' },
- *   ur: { 'khata.title': 'کھاتہ', 'khata.addCustomer': 'گاہک شامل کریں' },
+ *   en: { khata: { appName: 'Khata', nav: { dashboard: 'Dashboard' } } },
+ *   ur: { khata: { appName: 'کھاتہ', nav: { dashboard: 'ڈیش بورڈ' } } },
+ * });
+ *
+ * // Flat format (manual):
+ * registerAppTranslations({
+ *   en: { 'app.title': 'My App' },
+ *   ur: { 'app.title': 'میری ایپ' },
  * });
  */
 export function registerAppTranslations(
-  translations: Partial<Record<Language, Record<string, string>>>,
+  translations: Partial<Record<Language, Record<string, unknown>>>,
 ): void {
   for (const [lng, keys] of Object.entries(translations)) {
     if (keys) {
