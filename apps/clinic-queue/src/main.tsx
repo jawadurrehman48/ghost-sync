@@ -1,10 +1,18 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { ErrorBoundary, registerAppTranslations } from '@skeleton/core';
+import en from './i18n/en.json';
+import ur from './i18n/ur.json';
+import './index.css';
+import App from './App.tsx';
+
+// Clinic keys on top of the skeleton's shared keys, before the first render.
+registerAppTranslations({ en, ur });
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
-)
+);

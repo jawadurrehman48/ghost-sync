@@ -7,7 +7,7 @@ import { join, relative } from 'node:path';
  * Urdu (RTL). These physical classes never flip, so they are forbidden.
  */
 const ROOT = join(__dirname, '..');
-const SCAN_DIRS = [join(ROOT, 'apps/khata/src'), join(ROOT, 'packages/skeleton/src/ui')];
+const SCAN_DIRS = [join(ROOT, 'apps/khata/src'), join(ROOT, 'apps/clinic-queue/src'), join(ROOT, 'packages/skeleton/src/ui')];
 
 // A class token starts at a quote, backtick, whitespace or variant colon.
 const START = '(?:^|[\\s"\'`:])';
@@ -44,9 +44,13 @@ describe('RTL: logical Tailwind classes only', () => {
     });
   }
 
-  it('every khata screen file uses at least one logical class or none of the physical ones', () => {
+  it.each([
+    ['khata', 'apps/khata/src', 8],
+    ['clinic-queue', 'apps/clinic-queue/src', 9],
+  ])('scans every %s screen', (_app, dir, minimum) => {
     // Sanity: the screens exist and are being scanned.
-    const screens = files.filter((f) => f.includes('screens') && f.endsWith('Screen.tsx'));
-    expect(screens.length).toBeGreaterThanOrEqual(8);
+    const root = join(ROOT, dir);
+    const screens = files.filter((f) => f.startsWith(root) && f.includes('screens') && f.endsWith('Screen.tsx'));
+    expect(screens.length).toBeGreaterThanOrEqual(minimum);
   });
 });

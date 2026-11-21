@@ -5,6 +5,12 @@ export interface UseStoreSnapshotOptions {
   /** If given, the snapshot reloads whenever the sync engine status changes
    *  (e.g. after records from another device were pulled in). */
   engine?: SyncEngine;
+  /**
+   * If set, also reload every `pollMs` milliseconds. Reading IndexedDB is
+   * local and cheap, so this keeps a screen (for example a waiting-room
+   * display in another tab) up to date with writes made elsewhere on the device.
+   */
+  pollMs?: number;
 }
 
 export interface StoreSnapshot<T> {
@@ -28,7 +34,7 @@ export function useStoreSnapshot<T>(
   load: () => Promise<T>,
   options: UseStoreSnapshotOptions = {},
 ): StoreSnapshot<T> {
-  const { engine } = options;
+  const { engine, pollMs } = options;
   const [data, setData] = useState<T | undefined>(undefined);
   const [error, setError] = useState<unknown>(undefined);
 
@@ -75,6 +81,12 @@ export function useStoreSnapshot<T>(
     });
     return unsubscribe;
   }, [engine, reload]);
+
+  useEffect(() => {
+    if (!pollMs || pollMs <= 0) return undefined;
+    const id = setInterval(() => void reload(), pollMs);
+    return () => clearInterval(id);
+  }, [pollMs, reload]);
 
   return { data, error, reload };
 }

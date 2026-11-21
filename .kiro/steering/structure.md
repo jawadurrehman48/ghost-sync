@@ -8,10 +8,13 @@ ghost-sync/
 │   ├── setup.ts              # fake-indexeddb/auto for Dexie in Node
 │   ├── store / engine / adapter / sync-convergence / derive / deviceId / i18n / ui*.test   # skeleton
 │   ├── utils.test.ts         # money, phone, date helpers (property-based)
-│   ├── i18n-keys.test.ts     # en/ur key parity for skeleton and khata
+│   ├── skeleton-shared.test.tsx # csv, share, once, text, time, useNow, pollMs, StatCard, ChoiceGroup
+│   ├── i18n-keys.test.ts     # en/ur key parity for skeleton, khata and clinic-queue
 │   ├── khata.helpers.ts      # ledger builders, BigInt oracle, deterministic shuffle
-│   └── khata.*.test.ts(x)    # balance, dashboard, reversal, reminder, phone, csv, demo,
-│                             # screens, rtl (logical classes), architecture, performance
+│   ├── khata.*.test.ts(x)    # balance, dashboard, reversal, reminder, phone, csv, demo,
+│   │                         # screens, app, performance; rtl and architecture also scan clinic-queue
+│   ├── clinic.helpers.ts     # record builders, random scenarios, reference state machine, shuffle
+│   └── clinic.*.test.ts(x)   # tokens (TR-1..3), summary (TR-4), notify, demo, csv, screens, app
 │
 ├── packages/
 │   └── skeleton/             # @skeleton/core: shared library
@@ -35,11 +38,17 @@ ghost-sync/
 │           │   ├── money.ts      # formatPaisa, paisaFromRupees, parseWholeRupees
 │           │   ├── phone.ts      # validatePakistaniPhone, normalizePhone
 │           │   ├── date.ts       # todayISO (local), isValidISODate, formatDateDMY, addDays, weekRange, monthRange
+│           │   ├── time.ts       # formatTime, minutesBetween, localHour, isValidTimestamp
+│           │   ├── text.ts       # collapseSpaces, nameKey
+│           │   ├── share.ts      # toInternationalPk, whatsAppLink, smsLink
+│           │   ├── csv.ts        # csvField, csvSafeText, csvLine, csvDocument, createCsvBlob, downloadBlob
+│           │   ├── once.ts       # singleFlight (demo loaders: one run at a time)
 │           │   └── digits.ts     # toAsciiDigits (Urdu / Arabic-Indic digits)
 │           ├── theme.css     # brand tokens, bundled offline Urdu font, RTL line-height, animations
 │           ├── hooks/
 │           │   ├── useOnlineStatus.ts   # React hook for online/offline
-│           │   ├── useStoreSnapshot.ts  # load local data; reload after writes and sync
+│           │   ├── useStoreSnapshot.ts  # load local data; reload after writes, sync and (pollMs) on a timer
+│           │   ├── useNow.ts            # current time, refreshed every N ms (clocks, waiting times)
 │           │   └── useSubmitGuard.ts    # one save per tap (no double entries)
 │           ├── i18n/
 │           │   ├── index.ts      # i18n init, setLanguage, registerAppTranslations
@@ -50,7 +59,7 @@ ghost-sync/
 │           └── ui/               # UI kit (logical classes, 44px+ targets)
 │               ├── AppShell.tsx        # Phone-width column: header (logo, sync, language) + content
 │               ├── BottomNav.tsx, ScreenHeader.tsx, FloatingActionButton.tsx
-│               ├── Button.tsx, Card.tsx, TextField.tsx (+ TextAreaField)
+│               ├── Button.tsx, Card.tsx, StatCard.tsx, TextField.tsx (+ TextAreaField), ChoiceGroup.tsx
 │               ├── ConfirmDialog.tsx, EmptyState.tsx, Notice.tsx, LoadingState.tsx, Spinner.tsx
 │               ├── ErrorBoundary.tsx, GroupedBarChart.tsx (SVG, no chart library)
 │               └── SyncStatusBadge.tsx, LanguageToggle.tsx
@@ -74,13 +83,23 @@ ghost-sync/
 │   │       └── screens/          # Dashboard, CustomerList, AddCustomer (+edit), CustomerDetail,
 │   │                             # AddEntry, ReverseEntry, Reports, Settings
 │   │
-│   └── clinic-queue/         # Patient token app (placeholder; PWA icons ready)
+│   └── clinic-queue/         # Patient token and queue app (complete)
 │       ├── package.json
-│       ├── vite.config.ts
+│       ├── vite.config.ts    # React + PWA (icons, manifest, font cache) + Tailwind, port 5174
+│       ├── public/           # favicon + PWA icons (ticket with a medical cross, teal)
 │       └── src/
-│           ├── main.tsx
-│           ├── App.tsx       # Root component (placeholder)
-│           └── index.css
+│           ├── main.tsx           # Registers clinic translations, mounts App
+│           ├── App.tsx            # Routing, bottom nav, floating +, history, #display mode
+│           ├── index.css          # theme import + teal brand tokens
+│           ├── clinic.types.ts    # ClinicCollections, Token, Queue, Summary, Screen
+│           ├── clinic.db.ts, clinic.store.ts, clinic.limits.ts
+│           ├── clinic.reducers.ts # pure derivations: tokens (state machine), queue, letters, numbers, summary
+│           ├── clinic.actions.ts  # issue, call next, call, complete, skip, requeue
+│           ├── i18n/              # en.json, ur.json (all clinic.* keys)
+│           ├── components/        # Logo, NavIcons, TokenLabel, StatusPill, PatientForm, NotifyButtons
+│           ├── utils/             # notify (WhatsApp/SMS), csv, demo
+│           └── screens/           # Queue, IssueToken, Token, Display, Patients, AddPatient,
+│                                  # PatientDetail, Summary, Settings
 │
 └── .kiro/
     ├── steering/             # This folder: always-included project rules
@@ -90,7 +109,8 @@ ghost-sync/
     ├── hooks/                # Auto-test and translation-checker hooks
     └── specs/                # Feature specs
         ├── skeleton-core/    # Skeleton implementation spec (complete)
-        └── khata/            # Khata app spec (complete)
+        ├── khata/            # Khata app spec (complete)
+        └── clinic-queue/     # Clinic Queue app spec (complete)
 ```
 
 ## Rules

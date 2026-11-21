@@ -3,7 +3,8 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 /**
- * Architecture rules (steering tech.md + structure.md, spec NFR-7):
+ * Architecture rules (steering tech.md + structure.md, spec NFR-7), checked
+ * for every app built on the skeleton:
  *  - apps only use @skeleton/core for storage, sync, i18n and UI
  *  - no direct IndexedDB or network calls inside apps
  *  - apps never import from each other
@@ -19,13 +20,31 @@ function sourceFiles(dir: string): string[] {
   });
 }
 
-const khataFiles = sourceFiles(join(ROOT, 'apps/khata/src'));
 const read = (file: string) => readFileSync(file, 'utf8');
-const offenders = (pattern: RegExp) => khataFiles.filter((f) => pattern.test(read(f))).map((f) => relative(ROOT, f));
 
-describe('khata uses only @skeleton/core', () => {
+// Plain text between JSX tags. `(?<![=-])>` skips arrow functions (=>) so
+// TypeScript like `() => Promise<void>` is not mistaken for markup.
+const jsxText = /(?<![=-])>\s*([A-Za-z][A-Za-z ,.'!?]{2,}?)\s*</;
+
+describe('the hard-coded text rule', () => {
+  it('catches hard-coded text and ignores code', () => {
+    expect(jsxText.test('<p>Hello there</p>')).toBe(true);
+    expect(jsxText.test('<button type="button">Save</button>')).toBe(true);
+    expect(jsxText.test('<p>{t("khata.common.save")}</p>')).toBe(false);
+    expect(jsxText.test('async function run(action: () => Promise<void>) {}')).toBe(false);
+    expect(jsxText.test('const [x, setX] = useState<Notice>(null);')).toBe(false);
+  });
+});
+
+describe.each([
+  ['khata', 'apps/khata/src', 'clinic-queue', 20],
+  ['clinic-queue', 'apps/clinic-queue/src', 'khata', 20],
+])('%s uses only @skeleton/core', (_app, dir, otherApp, minimumFiles) => {
+  const files = sourceFiles(join(ROOT, dir));
+  const offenders = (pattern: RegExp) => files.filter((f) => pattern.test(read(f))).map((f) => relative(ROOT, f));
+
   it('scans the app sources', () => {
-    expect(khataFiles.length).toBeGreaterThan(20);
+    expect(files.length).toBeGreaterThan(minimumFiles);
   });
 
   it.each([
@@ -43,7 +62,8 @@ describe('khata uses only @skeleton/core', () => {
   });
 
   it('never imports from another app', () => {
-    expect(offenders(/clinic-queue/)).toEqual([]);
+    expect(offenders(new RegExp(`from\\s+['"][^'"]*${otherApp}`))).toEqual([]);
+    expect(offenders(/from\s+['"][^'"]*apps\//)).toEqual([]);
   });
 
   it('only reaches the skeleton through the @skeleton/core entry point', () => {
@@ -55,23 +75,9 @@ describe('khata uses only @skeleton/core', () => {
     expect(offenders(/:\s*any\b|<any>|\bas\s+any\b|\bany\[\]/)).toEqual([]);
   });
 
-  describe('no hard-coded English strings in screens: user-facing text comes from t(...)', () => {
-    // Plain text between JSX tags. `(?<![=-])>` skips arrow functions (=>) so
-    // TypeScript like `() => Promise<void>` is not mistaken for markup.
-    const jsxText = /(?<![=-])>\s*([A-Za-z][A-Za-z ,.'!?]{2,}?)\s*</;
-
-    it('the rule itself catches hard-coded text and ignores code', () => {
-      expect(jsxText.test('<p>Hello there</p>')).toBe(true);
-      expect(jsxText.test('<button type="button">Save</button>')).toBe(true);
-      expect(jsxText.test('<p>{t("khata.common.save")}</p>')).toBe(false);
-      expect(jsxText.test('async function run(action: () => Promise<void>) {}')).toBe(false);
-      expect(jsxText.test('const [x, setX] = useState<Notice>(null);')).toBe(false);
-    });
-
-    it('finds none in the screens', () => {
-      const screens = khataFiles.filter((f) => f.includes('screens') && f.endsWith('Screen.tsx'));
-      const found = screens.filter((f) => jsxText.test(read(f))).map((f) => relative(ROOT, f));
-      expect(found).toEqual([]);
-    });
+  it('has no hard-coded English text in screens or components: it comes from t(...)', () => {
+    const ui = files.filter((f) => /[\\/](screens|components)[\\/]/.test(f) && f.endsWith('.tsx'));
+    expect(ui.length).toBeGreaterThan(5);
+    expect(ui.filter((f) => jsxText.test(read(f))).map((f) => relative(ROOT, f))).toEqual([]);
   });
 });

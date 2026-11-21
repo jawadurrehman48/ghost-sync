@@ -1,4 +1,4 @@
-import { addDays, todayISO } from '@skeleton/core';
+import { addDays, singleFlight, todayISO } from '@skeleton/core';
 import type { Store } from '@skeleton/core';
 import { DEFAULT_SHOP_NAME, deriveSettings } from '../khata.reducers';
 import type { KhataCollections } from '../khata.types';
@@ -125,18 +125,13 @@ async function insertDemoData(store: Store<KhataCollections>): Promise<DemoResul
   return 'loaded';
 }
 
-const inFlight = new WeakMap<object, Promise<DemoResult>>();
-
 /**
  * Add the realistic sample shop to the store, at most once.
  *  - If the demo data is already there, nothing is added and 'alreadyLoaded' is returned.
- *  - Two overlapping calls share one run, so a double tap cannot duplicate customers.
+ *  - Two overlapping calls share one run (skeleton singleFlight), so a double tap
+ *    cannot duplicate customers.
  * Everything goes through store.add, the same path as real entries.
  */
 export function loadDemoData(store: Store<KhataCollections>): Promise<DemoResult> {
-  const running = inFlight.get(store);
-  if (running) return running;
-  const task = insertDemoData(store).finally(() => inFlight.delete(store));
-  inFlight.set(store, task);
-  return task;
+  return singleFlight(store, () => insertDemoData(store));
 }

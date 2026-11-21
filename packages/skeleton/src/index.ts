@@ -24,6 +24,11 @@ export { createSyncEngine } from './sync/engine';
 export { toAsciiDigits } from './utils/digits';
 export { formatPaisa, paisaFromRupees, parseWholeRupees } from './utils/money';
 export { normalizePhone, validatePakistaniPhone, formatPhone } from './utils/phone';
+export { csvField, csvSafeText, csvLine, csvDocument, createCsvBlob, downloadBlob } from './utils/csv';
+export { toInternationalPk, whatsAppLink, smsLink } from './utils/share';
+export { singleFlight } from './utils/once';
+export { collapseSpaces, nameKey } from './utils/text';
+export { formatTime, minutesBetween, localHour, isValidTimestamp } from './utils/time';
 export {
   toISODate,
   todayISO,
@@ -40,6 +45,7 @@ export { useOnlineStatus } from './hooks/useOnlineStatus';
 export { useSubmitGuard } from './hooks/useSubmitGuard';
 export type { SubmitGuard } from './hooks/useSubmitGuard';
 export { useStoreSnapshot } from './hooks/useStoreSnapshot';
+export { useNow } from './hooks/useNow';
 export type { StoreSnapshot, UseStoreSnapshotOptions } from './hooks/useStoreSnapshot';
 
 // i18n module
@@ -77,6 +83,10 @@ export { ErrorBoundary } from './ui/ErrorBoundary';
 export type { ErrorBoundaryProps } from './ui/ErrorBoundary';
 export { GroupedBarChart } from './ui/GroupedBarChart';
 export type { BarGroup, BarSeries, GroupedBarChartProps } from './ui/GroupedBarChart';
+export { StatCard } from './ui/StatCard';
+export type { StatCardProps, StatTone } from './ui/StatCard';
+export { ChoiceGroup } from './ui/ChoiceGroup';
+export type { Choice, ChoiceGroupProps } from './ui/ChoiceGroup';
 export { BottomNav } from './ui/BottomNav';
 export type { BottomNavItem, BottomNavProps } from './ui/BottomNav';
 export { ScreenHeader } from './ui/ScreenHeader';

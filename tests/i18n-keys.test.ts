@@ -3,6 +3,8 @@ import skeletonEn from '../packages/skeleton/src/i18n/locales/en.json';
 import skeletonUr from '../packages/skeleton/src/i18n/locales/ur.json';
 import khataEn from '../apps/khata/src/i18n/en.json';
 import khataUr from '../apps/khata/src/i18n/ur.json';
+import clinicEn from '../apps/clinic-queue/src/i18n/en.json';
+import clinicUr from '../apps/clinic-queue/src/i18n/ur.json';
 
 /** Flatten nested translation objects to { "a.b.c": "text" }. */
 function flatten(obj: unknown, prefix = ''): Record<string, string> {
@@ -25,6 +27,7 @@ function placeholders(text: string): string[] {
 describe.each([
   ['skeleton', skeletonEn, skeletonUr],
   ['khata', khataEn, khataUr],
+  ['clinic-queue', clinicEn, clinicUr],
 ])('%s translations', (_name, en, ur) => {
   const flatEn = flatten(en);
   const flatUr = flatten(ur);
@@ -46,10 +49,25 @@ describe.each([
   });
 });
 
-describe('khata keys do not collide with skeleton keys', () => {
-  it('every khata key is under the khata. prefix', () => {
-    for (const key of Object.keys(flatten(khataEn))) {
-      expect(key.startsWith('khata.'), key).toBe(true);
+describe.each([
+  ['khata', khataEn],
+  ['clinic', clinicEn],
+])('%s keys do not collide with skeleton keys', (prefix, en) => {
+  it(`every key is under the ${prefix}. prefix`, () => {
+    for (const key of Object.keys(flatten(en))) {
+      expect(key.startsWith(`${prefix}.`), key).toBe(true);
     }
+  });
+});
+
+describe('Urdu translations are really Urdu', () => {
+  it.each([
+    ['khata', khataUr],
+    ['clinic-queue', clinicUr],
+  ])('%s: almost every Urdu value contains Urdu script', (_name, ur) => {
+    const values = Object.entries(flatten(ur));
+    const latinOnly = values.filter(([, text]) => !/[\u0600-\u06FF]/.test(text)).map(([key]) => key);
+    // A few values may legitimately be symbols or numbers only (e.g. "#{{position}}").
+    expect(latinOnly.length).toBeLessThanOrEqual(Math.ceil(values.length * 0.03));
   });
 });

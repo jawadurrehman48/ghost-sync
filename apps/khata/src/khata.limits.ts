@@ -12,12 +12,5 @@ export const LIMITS = {
   amountDigits: 9,
 } as const;
 
-/** Trim and collapse runs of spaces/newlines to single spaces (names, shop name). */
-export function collapseSpaces(value: string): string {
-  return value.trim().replace(/\s+/g, ' ');
-}
-
-/** Lower-case, collapsed form used to compare names ("  ALI   Raza " equals "ali raza"). */
-export function nameKey(value: string): string {
-  return collapseSpaces(value).toLowerCase();
-}
+// Name helpers now live in the skeleton (shared with Clinic Queue).
+export { collapseSpaces, nameKey } from '@skeleton/core';

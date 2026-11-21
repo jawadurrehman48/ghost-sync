@@ -8,7 +8,7 @@ Everything an app needs is imported from one place:
 import { createStore, AppShell, formatPaisa /* ... */ } from '@skeleton/core';
 ```
 
-Apps never import `dexie`, `i18next` or `react-i18next` directly, never touch IndexedDB, and never call the network. `tests/khata.architecture.test.ts` enforces this for Khata.
+Apps never import `dexie`, `i18next` or `react-i18next` directly, never touch IndexedDB, and never call the network. `tests/khata.architecture.test.ts` enforces this for Khata and Clinic Queue.
 
 ## What's inside
 
@@ -17,9 +17,9 @@ Apps never import `dexie`, `i18next` or `react-i18next` directly, never touch In
 | **storage** | `createDatabase`, `createStore` (append-only `add` / `query`), `deriveState`, `getOrCreateDeviceId`, `clearAllData` |
 | **sync** | `createSyncEngine`, `InMemorySyncAdapter`, `SyncAdapter` and `SyncableStore` types, `createSyncStatusStore` |
 | **i18n** | `registerAppTranslations`, `setLanguage`, `useLanguage`, `useTranslation`, `LANGUAGES`, `i18n` |
-| **utils** | money: `formatPaisa`, `paisaFromRupees`, `parseWholeRupees` · phone: `validatePakistaniPhone`, `normalizePhone`, `formatPhone` · dates: `todayISO`, `toISODate`, `isValidISODate`, `formatDateDMY`, `addDays`, `daysBetween`, `weekRange`, `monthRange` · `toAsciiDigits` |
-| **hooks** | `useStoreSnapshot`, `useSubmitGuard`, `useOnlineStatus` |
-| **ui** | `AppShell`, `BottomNav`, `ScreenHeader`, `Button`, `Card`, `TextField`, `TextAreaField`, `ConfirmDialog`, `EmptyState`, `FloatingActionButton`, `Notice`, `LoadingState`, `Spinner`, `ErrorBoundary`, `GroupedBarChart`, `SyncStatusBadge`, `LanguageToggle` |
+| **utils** | money: `formatPaisa`, `paisaFromRupees`, `parseWholeRupees` · phone: `validatePakistaniPhone`, `normalizePhone`, `formatPhone` · dates: `todayISO`, `toISODate`, `isValidISODate`, `formatDateDMY`, `addDays`, `daysBetween`, `weekRange`, `monthRange` · time: `formatTime`, `minutesBetween`, `localHour`, `isValidTimestamp` · text: `collapseSpaces`, `nameKey` · share: `toInternationalPk`, `whatsAppLink`, `smsLink` · CSV: `csvField`, `csvSafeText`, `csvLine`, `csvDocument`, `createCsvBlob`, `downloadBlob` · `singleFlight` · `toAsciiDigits` |
+| **hooks** | `useStoreSnapshot` (optional `pollMs`), `useSubmitGuard`, `useOnlineStatus`, `useNow` |
+| **ui** | `AppShell`, `BottomNav`, `ScreenHeader`, `Button`, `Card`, `StatCard`, `TextField`, `TextAreaField`, `ChoiceGroup`, `ConfirmDialog`, `EmptyState`, `FloatingActionButton`, `Notice`, `LoadingState`, `Spinner`, `ErrorBoundary`, `GroupedBarChart`, `SyncStatusBadge`, `LanguageToggle` |
 | **theme** | `src/theme.css`: brand colour tokens, bundled offline Urdu font, Urdu line-height, animations, reduced-motion support |
 
 ## Build a new app in six steps
@@ -129,7 +129,9 @@ All components are mobile-first, use **logical** Tailwind classes only (`ms-`, `
 | --- | --- |
 | `Button` | Every button. Variants `primary` (brand), `secondary`, `neutral`, `danger` (red), `dangerOutline`, `success` (green). `loading` disables it and shows a spinner. With `href` it renders a link (adds `noopener` for new tabs). |
 | `Card` | The one card style. Pass `onClick` to make the whole card a 56px button. `tone="muted"` for inactive items. |
+| `StatCard` | A small figure with a label (counts on a dashboard). Tones `default`, `brand`, `success`, `warning`, `danger`, optional `hint`. |
 | `TextField`, `TextAreaField` | Labelled inputs with `error` / `hint` wired to `aria-describedby`. `size="lg"` gives the 56px amount field. |
+| `ChoiceGroup` | A native radio group drawn as large (48px) choice buttons. `allowDeselect` lets an optional choice be cleared. |
 | `ConfirmDialog` | "Are you sure?" dialogs. Focus starts on Cancel, Tab stays inside, Escape or a tap outside cancels, `tone="danger"` makes the confirm button red. |
 | `EmptyState` | Friendly "nothing here yet" with an action button. |
 | `FloatingActionButton` | The round `+` above the bottom navigation, on the right in English and the left in Urdu. |
@@ -152,6 +154,18 @@ weekRange();                           // { from: Monday, to: Sunday }
 monthRange();                          // { from: '2026-11-01', to: '2026-11-30' }
 addDays('2026-12-31', 1);              // "2027-01-01"
 ```
+
+```ts
+formatTime('2026-11-07T05:30:00Z');    // local "HH:MM", e.g. "10:30" in Pakistan
+minutesBetween(issuedAt, calledAt);    // whole minutes, never negative
+whatsAppLink('0300-1234567', message); // "https://wa.me/923001234567?text=..." (no API, no server)
+smsLink('0300-1234567', message);      // "sms:03001234567?body=..." fallback
+csvDocument(rows);                     // escaped CSV; csvSafeText() blocks spreadsheet formulas
+downloadBlob(createCsvBlob(csv), 'backup.csv'); // UTF-8 BOM so Urdu opens correctly in Excel
+singleFlight(store, () => loadDemo()); // one run at a time per key (double taps share it)
+```
+
+`useNow(ms)` re-renders every `ms` for live clocks and waiting times. `useStoreSnapshot(load, { engine, pollMs })` also re-reads local data on a timer, which keeps a second tab (such as a waiting-room display) in step without any network.
 
 `useSubmitGuard()` returns `{ busy, run }`. Wrap every save in `run(...)`: in an append-only ledger, a double tap would otherwise record a real second entry.
 
