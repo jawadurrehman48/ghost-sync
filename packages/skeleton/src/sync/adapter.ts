@@ -18,6 +18,14 @@ export interface SyncAdapter {
    * @returns records not in knownIds.
    */
   pull(knownIds: string[]): Promise<SkeletonRecord<unknown>[]>;
+
+  /**
+   * Optional. Called by the engine after every record returned by the last
+   * `pull` has been saved locally. Adapters that pull incrementally (with a
+   * cursor) advance their cursor here, never earlier, so a sync interrupted
+   * between pull and save simply pulls the same records again.
+   */
+  commitPull?(): Promise<void>;
 }
 
 /**

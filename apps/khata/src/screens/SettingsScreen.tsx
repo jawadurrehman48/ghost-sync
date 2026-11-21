@@ -7,6 +7,7 @@ import {
   LANGUAGES,
   Notice,
   ScreenHeader,
+  SyncDevicesSection,
   TextField,
   useSubmitGuard,
   useTranslation,
@@ -41,6 +42,7 @@ export function SettingsScreen({
   onClearAll,
   language,
   changeLanguage,
+  devices,
 }: ScreenProps) {
   const { t } = useTranslation();
   const guard = useSubmitGuard();
@@ -137,6 +139,8 @@ export function SettingsScreen({
           </label>
         ))}
       </fieldset>
+
+      <SyncDevicesSection sync={devices} />
 
       <section className="space-y-3" aria-labelledby="data-heading">
         <h3 id="data-heading" className="text-base font-semibold text-gray-800">

@@ -8,16 +8,17 @@ import {
   LoadingState,
   Notice,
   clearAllData,
+  readJoinCode,
   setLanguage,
   todayISO,
   useLanguage,
   useStoreSnapshot,
   useTranslation,
 } from '@skeleton/core';
-import type { Language, SyncStatus } from '@skeleton/core';
+import type { DeviceSync, Language, SyncStatus } from '@skeleton/core';
 import { Logo } from './components/Logo';
 import { CustomersIcon, HomeIcon, ReportsIcon, SettingsIcon } from './components/NavIcons';
-import { adapter, db, engine, store } from './khata.store';
+import { db, engine, store, sync } from './khata.store';
 import { deriveAll } from './khata.reducers';
 import type { KhataData, Screen } from './khata.types';
 import { AddCustomerScreen } from './screens/AddCustomerScreen';
@@ -113,9 +114,12 @@ function App() {
   const { t } = useTranslation();
   const { language } = useLanguage();
 
-  const [screen, setScreen] = useState<Screen>(HOME);
+  // Opened from another phone's QR code (#join=<code>): start on Settings and offer to join.
+  const [joinCode] = useState(() => readJoinCode(window.location.hash));
+  const [screen, setScreen] = useState<Screen>(joinCode ? { name: 'settings' } : HOME);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>(engine.getStatus());
   const [today, setToday] = useState(todayISO());
+  const [workspaceCode, setWorkspaceCode] = useState(() => sync.getWorkspaceId());
 
   // All local data; reloads after writes and after sync activity.
   const { data, error, reload } = useStoreSnapshot(loadAll, { engine });
@@ -144,14 +148,20 @@ function App() {
   // Navigation uses the browser history so the Android back button steps
   // back through screens instead of closing the app.
   useEffect(() => {
-    window.history.replaceState({ screen: HOME }, '');
+    if (joinCode) {
+      // Drop the code from the address bar; Back from Settings goes to the dashboard.
+      window.history.replaceState({ screen: HOME }, '', `${window.location.pathname}${window.location.search}`);
+      window.history.pushState({ screen: { name: 'settings' } }, '');
+    } else {
+      window.history.replaceState({ screen: HOME }, '');
+    }
     const onPopState = (event: PopStateEvent) => {
       const state = event.state as { screen?: Screen } | null;
       setScreen(state?.screen ?? HOME);
     };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
-  }, []);
+  }, [joinCode]);
 
   const navigate = useCallback((next: Screen) => {
     window.history.pushState({ screen: next }, '');
@@ -179,12 +189,34 @@ function App() {
     [onChanged],
   );
 
-  /** Erase everything on this phone (and the mock cloud copy), then show the empty app. */
+  /**
+   * Erase everything on this phone, then show the empty app. The phone also
+   * leaves its sync workspace (it gets a new code), so the erased data is not
+   * pulled straight back; other paired phones keep their copy.
+   */
   const onClearAll = useCallback(async () => {
     await clearAllData(db);
-    adapter.reset();
+    sync.leaveWorkspace();
+    setWorkspaceCode(sync.getWorkspaceId());
     await reload();
   }, [reload]);
+
+  /** "Sync devices" in Settings: this phone's code, and joining another phone's code. */
+  const devices = useMemo<DeviceSync>(
+    () => ({
+      mode: sync.mode,
+      workspaceCode,
+      joinUrl: sync.getJoinUrl(),
+      initialCode: joinCode,
+      join: async (code: string) => {
+        const result = await sync.joinWorkspace(code);
+        setWorkspaceCode(sync.getWorkspaceId());
+        await reload();
+        return result;
+      },
+    }),
+    [workspaceCode, joinCode, reload],
+  );
 
   const navItems = [
     { key: 'dashboard' as const, label: t('khata.nav.dashboard'), icon: <HomeIcon /> },
@@ -220,6 +252,7 @@ function App() {
                 language,
                 changeLanguage,
                 onClearAll,
+                devices,
               })}
             </div>
           ) : error ? (

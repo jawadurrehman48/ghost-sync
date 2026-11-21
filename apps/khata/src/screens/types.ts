@@ -1,4 +1,4 @@
-import type { Language, Store } from '@skeleton/core';
+import type { DeviceSync, Language, Store } from '@skeleton/core';
 import type { KhataCollections, KhataData, KhataDerived, Screen } from '../khata.types';
 
 /** Props every screen receives from App. */
@@ -17,4 +17,6 @@ export type ScreenProps = {
   changeLanguage: (language: Language) => Promise<void>;
   /** Erases all data on this phone (the Settings "danger" action). */
   onClearAll: () => Promise<void>;
+  /** This phone's sync code and joining another phone (Settings "Sync devices"). */
+  devices: DeviceSync;
 };

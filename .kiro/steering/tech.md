@@ -17,7 +17,7 @@
 
 ### Data access
 
-All data access goes through `@skeleton/core`. Apps use `createStore`, `deriveState`, `createSyncEngine`, and the `InMemorySyncAdapter`. Apps never call IndexedDB, Dexie, or the network directly. If a data utility would be useful to both apps, it belongs in `packages/skeleton`, not in an app.
+All data access goes through `@skeleton/core`. Apps use `createStore`, `deriveState`, and `createCloudSync({ app, store, ...syncSetupFromEnv(import.meta.env) })`, which picks the `SupabaseSyncAdapter` when `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` are set, the `InMemorySyncAdapter` under tests, and local-only mode otherwise. Apps never call IndexedDB, Dexie, Supabase, or the network directly. Only the publishable key may be used in frontend code; no other Supabase key ever goes in an app or `.env` file. Database changes go in `supabase/migrations/` and are tested in PGlite (`tests/supabase-sql.test.ts`). If a data utility would be useful to both apps, it belongs in `packages/skeleton`, not in an app.
 
 ### Records are append-only
 

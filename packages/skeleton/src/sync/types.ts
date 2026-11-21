@@ -9,7 +9,9 @@ export type SyncStatus =
   | { state: 'pending'; count: number }
   | { state: 'syncing' }
   | { state: 'offline' }
-  | { state: 'error'; message: string };
+  | { state: 'error'; message: string }
+  /** No cloud is configured: data stays on this device and nothing is sent anywhere. */
+  | { state: 'local' };
 
 /**
  * Listener function called when sync status changes.
@@ -21,11 +23,18 @@ export type SyncStatusListener = (status: SyncStatus) => void;
  * Any store works, because the engine only needs the sync-internal methods.
  */
 export interface SyncEngineConfig {
-  adapter: SyncAdapter;
+  /** `null` means local-only mode: the engine never syncs and reports `{ state: 'local' }`. */
+  adapter: SyncAdapter | null;
   store: SyncableStore;
   maxRetries?: number;
   baseDelayMs?: number;
   maxDelayMs?: number;
+  /**
+   * After `start()`, also sync every this many ms while the page is visible
+   * and online, so a device that only watches (e.g. a waiting-room display)
+   * still receives other devices' records. 0 or undefined = off.
+   */
+  pollIntervalMs?: number;
 }
 
 /**

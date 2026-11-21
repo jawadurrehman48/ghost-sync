@@ -19,6 +19,30 @@ export type { SyncStatusStore } from './sync/status';
 export { InMemorySyncAdapter } from './sync/adapter';
 export type { SyncAdapter } from './sync/adapter';
 export { createSyncEngine } from './sync/engine';
+export { SupabaseSyncAdapter, checkSupabaseConfig, createSupabaseRpcClient, SERVER_LIMITS } from './sync/supabase';
+export type {
+  SupabaseConfig,
+  SupabaseConfigProblem,
+  SupabaseConfigResult,
+  SupabaseRpcClient,
+  SupabaseSyncAdapterOptions,
+} from './sync/supabase';
+export { createCloudSync, syncSetupFromEnv } from './sync/cloud';
+export type { CloudSync, CloudSyncOptions, JoinResult, SyncMode, SyncSetup } from './sync/cloud';
+export { createMemoryStorage, defaultStorage } from './sync/keyValue';
+export type { KeyValueStorage } from './sync/keyValue';
+export {
+  normalizeWorkspaceCode,
+  isValidWorkspaceCode,
+  getOrCreateWorkspaceId,
+  setWorkspaceId,
+  resetWorkspaceId,
+  readPullCursor,
+  writePullCursor,
+  clearPullCursor,
+  buildJoinUrl,
+  readJoinCode,
+} from './sync/workspace';
 
 // Utils module (formatting, validation, dates: shared by all apps)
 export { toAsciiDigits } from './utils/digits';
@@ -93,3 +117,7 @@ export { ScreenHeader } from './ui/ScreenHeader';
 export type { ScreenHeaderProps } from './ui/ScreenHeader';
 export { LanguageToggle } from './ui/LanguageToggle';
 export type { LanguageToggleProps } from './ui/LanguageToggle';
+export { QrCode } from './ui/QrCode';
+export type { QrCodeProps } from './ui/QrCode';
+export { SyncDevicesSection } from './ui/SyncDevicesSection';
+export type { DeviceSync, SyncDevicesSectionProps } from './ui/SyncDevicesSection';

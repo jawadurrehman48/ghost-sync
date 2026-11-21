@@ -20,6 +20,13 @@ export interface SyncableStore {
   markSynced(ids: string[]): Promise<void>;
 
   /**
+   * Marks every local record as 'pending' again, so the next sync pushes all
+   * of them. Used when this device joins another workspace: the records it
+   * already has are shared with that workspace too.
+   */
+  markAllPending(): Promise<void>;
+
+  /**
    * Inserts a clean record from sync pull into the table matching its `collection` field.
    * The record is stored with `_syncStatus: 'synced'` (it came from the cloud).
    * Idempotent: if the id already exists, the row is skipped.
@@ -147,6 +154,12 @@ export function createStore<C>(
             await table.update((row as SyncedRow<unknown>).id, { _syncStatus: 'synced' });
           }
         }
+      }
+    },
+
+    async markAllPending(): Promise<void> {
+      for (const name of collectionNames) {
+        await db.table(name).toCollection().modify({ _syncStatus: 'pending' });
       }
     },
 

@@ -13,6 +13,10 @@ ghost-sync/
 │   ├── khata.helpers.ts      # ledger builders, BigInt oracle, deterministic shuffle
 │   ├── khata.*.test.ts(x)    # balance, dashboard, reversal, reminder, phone, csv, demo,
 │   │                         # screens, app, performance; rtl and architecture also scan clinic-queue
+│   ├── sync.helpers.ts       # FakeSupabase (same rules as the SQL), MemoryStore with faults
+│   ├── supabase-sync.test.ts # adapter + properties: no duplicates, no lost records, convergence
+│   ├── supabase-sql.test.ts  # the real migration in PGlite: RLS, grants, validation, paging
+│   ├── cloud-sync.test.ts, sync-devices.test.tsx, apps-sync.test.tsx  # config, local-only, joining, UI
 │   ├── clinic.helpers.ts     # record builders, random scenarios, reference state machine, shuffle
 │   └── clinic.*.test.ts(x)   # tokens (TR-1..3), summary (TR-4), notify, demo, csv, screens, app
 │
@@ -32,8 +36,12 @@ ghost-sync/
 │           ├── sync/         # Sync engine
 │           │   ├── types.ts      # SyncStatus, SyncEngineConfig, SyncEngine
 │           │   ├── status.ts     # createSyncStatusStore(): observable
-│           │   ├── adapter.ts    # SyncAdapter interface + InMemorySyncAdapter
-│           │   └── engine.ts     # createSyncEngine(): pull/push/backoff/auto-sync
+│           │   ├── adapter.ts    # SyncAdapter interface (+ optional commitPull) + InMemorySyncAdapter
+│           │   ├── engine.ts     # createSyncEngine(): pull/save/commit/push, backoff, auto-sync, local-only
+│           │   ├── supabase.ts   # checkSupabaseConfig, lazy supabase-js client, SupabaseSyncAdapter
+│           │   ├── workspace.ts  # workspace code (UUID), pull cursors, #join= links
+│           │   ├── keyValue.ts   # localStorage wrapper with in-memory fallback
+│           │   └── cloud.ts      # createCloudSync / syncSetupFromEnv: mode, join, leave
 │           ├── utils/        # Formatting + validation shared by all apps
 │           │   ├── money.ts      # formatPaisa, paisaFromRupees, parseWholeRupees
 │           │   ├── phone.ts      # validatePakistaniPhone, normalizePhone
@@ -62,7 +70,11 @@ ghost-sync/
 │               ├── Button.tsx, Card.tsx, StatCard.tsx, TextField.tsx (+ TextAreaField), ChoiceGroup.tsx
 │               ├── ConfirmDialog.tsx, EmptyState.tsx, Notice.tsx, LoadingState.tsx, Spinner.tsx
 │               ├── ErrorBoundary.tsx, GroupedBarChart.tsx (SVG, no chart library)
-│               └── SyncStatusBadge.tsx, LanguageToggle.tsx
+│               ├── SyncStatusBadge.tsx, LanguageToggle.tsx
+│               └── SyncDevicesSection.tsx, QrCode.tsx (Settings "Sync devices": code, copy, QR, join)
+│
+├── supabase/
+│   └── migrations/           # records table (PK workspace_id + id), RLS, push_records / pull_records
 │
 ├── apps/
 │   ├── khata/                # Credit ledger app (complete)

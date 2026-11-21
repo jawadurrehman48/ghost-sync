@@ -105,6 +105,12 @@ function setup(view: View, opts: { seed?: ClinicData; language?: Language } = {}
       changeLanguage,
       onClearAll,
       openDisplay,
+      devices: {
+        mode: 'memory',
+        workspaceCode: '0b5c1a7e-2f3d-4c8b-9a6e-1d2f3a4b5c6d',
+        joinUrl: 'https://clinic.example/#join=0b5c1a7e-2f3d-4c8b-9a6e-1d2f3a4b5c6d',
+        join: async () => 'joined' as const,
+      },
     };
     return view(props);
   }

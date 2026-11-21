@@ -8,16 +8,17 @@ import {
   LoadingState,
   Notice,
   clearAllData,
+  readJoinCode,
   setLanguage,
   todayISO,
   useLanguage,
   useStoreSnapshot,
   useTranslation,
 } from '@skeleton/core';
-import type { Language, SyncStatus } from '@skeleton/core';
+import type { DeviceSync, Language, SyncStatus } from '@skeleton/core';
 import { loadClinicData } from './clinic.actions';
 import { deriveAll } from './clinic.reducers';
-import { adapter, db, deviceId, engine, store } from './clinic.store';
+import { db, deviceId, engine, store, sync } from './clinic.store';
 import type { Screen } from './clinic.types';
 import { Logo } from './components/Logo';
 import { PatientsIcon, QueueIcon, SettingsIcon, SummaryIcon } from './components/NavIcons';
@@ -89,9 +90,12 @@ function App() {
   const { language } = useLanguage();
 
   const [isDisplay, setIsDisplay] = useState(() => window.location.hash === DISPLAY_HASH);
-  const [screen, setScreen] = useState<Screen>(HOME);
+  // Opened from another device's QR code (#join=<code>): start on Settings and offer to join.
+  const [joinCode] = useState(() => readJoinCode(window.location.hash));
+  const [screen, setScreen] = useState<Screen>(joinCode ? { name: 'settings' } : HOME);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>(engine.getStatus());
   const [today, setToday] = useState(todayISO());
+  const [workspaceCode, setWorkspaceCode] = useState(() => sync.getWorkspaceId());
 
   // Local data. Polling picks up writes from another tab on this device
   // (e.g. the reception phone app and the waiting-room display window).
@@ -125,14 +129,20 @@ function App() {
 
   // Android back button steps back through screens.
   useEffect(() => {
-    window.history.replaceState({ screen: HOME }, '');
+    if (joinCode) {
+      // Drop the code from the address bar; Back from Settings goes to the queue.
+      window.history.replaceState({ screen: HOME }, '', `${window.location.pathname}${window.location.search}`);
+      window.history.pushState({ screen: { name: 'settings' } }, '');
+    } else {
+      window.history.replaceState({ screen: HOME }, '');
+    }
     const onPopState = (event: PopStateEvent) => {
       const state = event.state as { screen?: Screen } | null;
       if (state?.screen) setScreen(state.screen);
     };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
-  }, []);
+  }, [joinCode]);
 
   const navigate = useCallback((next: Screen) => {
     window.history.pushState({ screen: next }, '');
@@ -158,11 +168,31 @@ function App() {
     [onChanged],
   );
 
+  // Erase this device, and leave its sync workspace (new code) so the data is
+  // not pulled straight back. Other paired devices keep their copy.
   const onClearAll = useCallback(async () => {
     await clearAllData(db);
-    adapter.reset();
+    sync.leaveWorkspace();
+    setWorkspaceCode(sync.getWorkspaceId());
     await reload();
   }, [reload]);
+
+  /** "Sync devices" in Settings: this device's code, and joining another device's code. */
+  const devices = useMemo<DeviceSync>(
+    () => ({
+      mode: sync.mode,
+      workspaceCode,
+      joinUrl: sync.getJoinUrl(),
+      initialCode: joinCode,
+      join: async (code: string) => {
+        const result = await sync.joinWorkspace(code);
+        setWorkspaceCode(sync.getWorkspaceId());
+        await reload();
+        return result;
+      },
+    }),
+    [workspaceCode, joinCode, reload],
+  );
 
   const openDisplay = useCallback(() => {
     const opened = window.open(`${window.location.pathname}${DISPLAY_HASH}`, 'clinic-queue-display');
@@ -218,6 +248,7 @@ function App() {
                 changeLanguage,
                 onClearAll,
                 openDisplay,
+                devices,
               })}
             </div>
           ) : error ? (

@@ -1,4 +1,4 @@
-import type { Language } from '@skeleton/core';
+import type { DeviceSync, Language } from '@skeleton/core';
 import type { ClinicStore } from '../clinic.actions';
 import type { ClinicData, ClinicDerived, Screen } from '../clinic.types';
 
@@ -17,4 +17,6 @@ export type ScreenProps = {
   onClearAll: () => Promise<void>;
   /** Open the waiting-room display in a new window. */
   openDisplay: () => void;
+  /** This device's sync code and joining another device (Settings "Sync devices"). */
+  devices: DeviceSync;
 };

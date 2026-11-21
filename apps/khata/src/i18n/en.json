@@ -141,7 +141,7 @@
       "clearButton": "Clear all data",
       "clearHint": "Deletes everything on this phone",
       "clearTitle": "Delete all data?",
-      "clearConfirm": "This permanently deletes every customer and entry from this phone. It cannot be undone. Download a backup first if you need one.",
+      "clearConfirm": "This permanently deletes every customer and entry from this phone. It cannot be undone. Download a backup first if you need one. Paired phones keep their own copy, and this phone gets a new sync code.",
       "clearConfirmYes": "Yes, delete everything",
       "cleared": "All data was deleted",
       "saved": "Saved"

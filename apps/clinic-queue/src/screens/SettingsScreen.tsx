@@ -7,6 +7,7 @@ import {
   LANGUAGES,
   Notice,
   ScreenHeader,
+  SyncDevicesSection,
   TextField,
   collapseSpaces,
   useSubmitGuard,
@@ -30,7 +31,7 @@ const MESSAGE_KEY: Record<Message, string> = {
 };
 
 /** Clinic name, this device's token letter, language, CSV backup, demo data and "Clear all data". */
-export function SettingsScreen({ data, derived, store, onChanged, onClearAll, language, changeLanguage }: ScreenProps) {
+export function SettingsScreen({ data, derived, store, onChanged, onClearAll, language, changeLanguage, devices }: ScreenProps) {
   const { t } = useTranslation();
   const guard = useSubmitGuard();
   const [clinicName, setClinicName] = useState(displayClinicName(derived.settings, t));
@@ -155,6 +156,8 @@ export function SettingsScreen({ data, derived, store, onChanged, onClearAll, la
           </label>
         ))}
       </fieldset>
+
+      <SyncDevicesSection sync={devices} />
 
       <section className="space-y-3" aria-labelledby="data-heading">
         <h3 id="data-heading" className="text-base font-semibold text-gray-800">

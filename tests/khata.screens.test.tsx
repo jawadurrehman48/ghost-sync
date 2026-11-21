@@ -79,6 +79,12 @@ function makeProps(language: Language = 'en') {
     language,
     changeLanguage,
     onClearAll,
+    devices: {
+      mode: 'memory',
+      workspaceCode: '0b5c1a7e-2f3d-4c8b-9a6e-1d2f3a4b5c6d',
+      joinUrl: 'https://khata.example/#join=0b5c1a7e-2f3d-4c8b-9a6e-1d2f3a4b5c6d',
+      join: vi.fn(async () => 'joined' as const),
+    },
   };
   return { props, add, navigate, onChanged, changeLanguage, onClearAll };
 }

@@ -6,7 +6,30 @@
     "pending": "{{count}} pending",
     "syncing": "Syncing",
     "offline": "Offline",
-    "error": "Error"
+    "error": "Error",
+    "local": "Local only"
+  },
+  "syncDevices": {
+    "title": "Sync devices",
+    "intro": "Every phone or tablet that uses the same sync code shares the same data. It syncs whenever the internet is on.",
+    "codeLabel": "This device's sync code",
+    "copy": "Copy code",
+    "copied": "Code copied",
+    "copyFailed": "Could not copy. Select the code and copy it by hand.",
+    "qrLabel": "QR code to join this device's data",
+    "qrHint": "On the other device, scan this QR code with the camera, or type the code under \"Join another device\".",
+    "secretWarning": "Anyone with this code can see and add to this data. Share it only with staff you trust.",
+    "joinLabel": "Join another device: enter its sync code",
+    "joinButton": "Join",
+    "invalid": "Enter the full sync code shown on the other device",
+    "same": "This device already uses this sync code.",
+    "confirmTitle": "Join this workspace?",
+    "confirmMessage": "This device will receive all data from that workspace. Data already on this device will be added to it too. Only join a workspace of your own shop or clinic.",
+    "confirmYes": "Yes, join",
+    "cancel": "Cancel",
+    "joined": "Joined. Data from the other devices arrives whenever the internet is on.",
+    "failed": "Could not join. Please try again.",
+    "localOnly": "Sync is not set up for this app, so data stays on this device only. Everything still works offline."
   },
   "language": {
     "toggleLabel": "Switch language",

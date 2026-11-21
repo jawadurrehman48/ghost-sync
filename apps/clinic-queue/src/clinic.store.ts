@@ -1,13 +1,13 @@
-import { createStore, createSyncEngine, getOrCreateDeviceId, InMemorySyncAdapter } from '@skeleton/core';
+import { createCloudSync, createStore, getOrCreateDeviceId, syncSetupFromEnv } from '@skeleton/core';
 import { db } from './clinic.db';
 
 /**
- * Singletons for the clinic app, all from @skeleton/core. The in-memory sync
- * adapter is a stand-in for a real cloud backend. `adapter` is exported so
- * "Clear all data" can empty the mock cloud copy too.
+ * Singletons for the clinic app, all from @skeleton/core. Sync uses Supabase
+ * when VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY are set, an
+ * in-memory stand-in under tests, and otherwise runs local-only (fully offline).
  */
 export { db };
 export const deviceId = getOrCreateDeviceId();
 export const store = createStore(db, deviceId);
-export const adapter = new InMemorySyncAdapter();
-export const engine = createSyncEngine({ adapter, store });
+export const sync = createCloudSync({ app: 'clinic-queue', store, ...syncSetupFromEnv(import.meta.env) });
+export const engine = sync.engine;

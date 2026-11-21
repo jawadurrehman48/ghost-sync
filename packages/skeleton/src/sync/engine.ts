@@ -9,6 +9,12 @@ import { createSyncStatusStore } from './status';
  * The engine is framework-agnostic — it listens to browser `online`/`offline`
  * events directly, not through the React hook. This lets it work in
  * non-React contexts (tests, service workers).
+ *
+ * With `adapter: null` the engine runs in local-only mode: it never syncs,
+ * never touches the network, and always reports `{ state: 'local' }`.
+ *
+ * Errors of any kind (network down, server error, timeouts) never escape:
+ * they are reported as an `error` status and retried with exponential backoff.
  */
 export function createSyncEngine(config: SyncEngineConfig): SyncEngine {
   const {
@@ -17,32 +23,26 @@ export function createSyncEngine(config: SyncEngineConfig): SyncEngine {
     maxRetries = 5,
     baseDelayMs = 1000,
     maxDelayMs = 30000,
+    pollIntervalMs = 0,
   } = config;
+  let pollTimer: ReturnType<typeof setInterval> | null = null;
+  let visibilityHandler: (() => void) | null = null;
+  const isVisible = () => typeof document === 'undefined' || document.visibilityState !== 'hidden';
 
-  const statusStore = createSyncStatusStore({ state: 'pending', count: 0 });
-  let isSyncing = false;
+  const statusStore = createSyncStatusStore(adapter ? { state: 'pending', count: 0 } : { state: 'local' });
+  let current: Promise<void> | null = null;
   let retryTimer: ReturnType<typeof setTimeout> | null = null;
   let onlineHandler: (() => void) | null = null;
   let offlineHandler: (() => void) | null = null;
 
+  /** Offline only when the browser says so (some runtimes have no `onLine` at all). */
   function isOnline(): boolean {
     if (typeof navigator === 'undefined') return true;
-    return navigator.onLine;
+    return navigator.onLine !== false;
   }
 
-  async function runSyncCycle(attempt: number = 0): Promise<void> {
-    // Guard: offline
-    if (!isOnline()) {
-      statusStore.set({ state: 'offline' });
-      return;
-    }
-
-    // Guard: already syncing
-    if (isSyncing) {
-      return;
-    }
-
-    isSyncing = true;
+  async function cycle(attempt: number): Promise<void> {
+    if (!adapter) return;
     statusStore.set({ state: 'syncing' });
 
     try {
@@ -52,6 +52,8 @@ export function createSyncEngine(config: SyncEngineConfig): SyncEngine {
       for (const record of pulled) {
         await store.ingestPulled(record);
       }
+      // Only now that everything is saved may the adapter move its cursor on.
+      if (adapter.commitPull) await adapter.commitPull();
 
       // --- Push phase ---
       const pending = await store.getPending();
@@ -72,19 +74,19 @@ export function createSyncEngine(config: SyncEngineConfig): SyncEngine {
       } else {
         statusStore.set({ state: 'pending', count: stillPending.length });
       }
-
-      isSyncing = false;
     } catch (err) {
-      isSyncing = false;
-
       const message = err instanceof Error ? err.message : String(err);
 
-      if (attempt < maxRetries) {
+      if (!isOnline()) {
+        // The connection dropped during the cycle: the `online` event resumes sync.
+        statusStore.set({ state: 'offline' });
+      } else if (attempt < maxRetries) {
         // Schedule retry with exponential backoff
         const delay = Math.min(baseDelayMs * Math.pow(2, attempt), maxDelayMs);
         statusStore.set({ state: 'error', message: `${message} (retry ${attempt + 1}/${maxRetries})` });
 
         retryTimer = setTimeout(() => {
+          retryTimer = null;
           runSyncCycle(attempt + 1).catch(() => {
             // If retry itself throws unexpectedly, mark as error
             statusStore.set({ state: 'error', message });
@@ -95,6 +97,23 @@ export function createSyncEngine(config: SyncEngineConfig): SyncEngine {
         statusStore.set({ state: 'error', message });
       }
     }
+  }
+
+  /** Run one cycle. A call while a cycle is running waits for that cycle instead of starting another. */
+  function runSyncCycle(attempt: number = 0): Promise<void> {
+    if (!adapter) {
+      statusStore.set({ state: 'local' });
+      return Promise.resolve();
+    }
+    if (!isOnline()) {
+      statusStore.set({ state: 'offline' });
+      return Promise.resolve();
+    }
+    if (current) return current;
+    current = cycle(attempt).finally(() => {
+      current = null;
+    });
+    return current;
   }
 
   return {
@@ -116,6 +135,11 @@ export function createSyncEngine(config: SyncEngineConfig): SyncEngine {
     },
 
     start(): void {
+      if (!adapter) {
+        statusStore.set({ state: 'local' });
+        return;
+      }
+
       // Listen to browser online/offline events
       if (typeof window !== 'undefined') {
         onlineHandler = () => {
@@ -126,6 +150,20 @@ export function createSyncEngine(config: SyncEngineConfig): SyncEngine {
         };
         window.addEventListener('online', onlineHandler);
         window.addEventListener('offline', offlineHandler);
+      }
+
+      // Background pull for devices that only watch. Skipped while a cycle or a retry is pending.
+      if (pollIntervalMs > 0 && !pollTimer) {
+        pollTimer = setInterval(() => {
+          if (!current && !retryTimer && isOnline() && isVisible()) void runSyncCycle(0);
+        }, pollIntervalMs);
+      }
+      // Coming back to the app (unlocking the phone, switching tabs): catch up at once.
+      if (typeof document !== 'undefined' && !visibilityHandler) {
+        visibilityHandler = () => {
+          if (isVisible()) void this.syncNow();
+        };
+        document.addEventListener('visibilitychange', visibilityHandler);
       }
 
       // Trigger an initial sync if online
@@ -147,7 +185,14 @@ export function createSyncEngine(config: SyncEngineConfig): SyncEngine {
         onlineHandler = null;
         offlineHandler = null;
       }
-      isSyncing = false;
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+      if (typeof document !== 'undefined' && visibilityHandler) {
+        document.removeEventListener('visibilitychange', visibilityHandler);
+        visibilityHandler = null;
+      }
     },
   };
 }

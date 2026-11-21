@@ -10,8 +10,8 @@ export interface SyncStatusBadgeProps {
  * Compact pill showing the current sync status.
  *
  * States: offline (gray), pending count (amber), syncing (blue spinner),
- * synced (green), error (red). Clickable when `onClick` is provided
- * and not currently syncing.
+ * synced (green), error (red), local only (gray: no cloud configured).
+ * Clickable when `onClick` is provided, not syncing and not local only.
  *
  * Uses Tailwind logical properties for RTL support.
  * Minimum touch target: 44x44px.
@@ -20,7 +20,7 @@ export function SyncStatusBadge({ status, onClick }: SyncStatusBadgeProps) {
   const { t } = useTranslation();
 
   const config = getStatusConfig(status, t);
-  const clickable = onClick !== undefined && status.state !== 'syncing';
+  const clickable = onClick !== undefined && status.state !== 'syncing' && status.state !== 'local';
 
   return (
     <button
@@ -89,6 +89,14 @@ function getStatusConfig(
         bg: 'bg-red-100',
         text: 'text-red-800',
         dot: 'bg-red-500',
+        spinner: false,
+      };
+    case 'local':
+      return {
+        label: t('sync.local'),
+        bg: 'bg-gray-100',
+        text: 'text-gray-700',
+        dot: 'bg-gray-400',
         spinner: false,
       };
   }

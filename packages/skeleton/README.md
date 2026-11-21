@@ -15,11 +15,11 @@ Apps never import `dexie`, `i18next` or `react-i18next` directly, never touch In
 | Module | Exports |
 | --- | --- |
 | **storage** | `createDatabase`, `createStore` (append-only `add` / `query`), `deriveState`, `getOrCreateDeviceId`, `clearAllData` |
-| **sync** | `createSyncEngine`, `InMemorySyncAdapter`, `SyncAdapter` and `SyncableStore` types, `createSyncStatusStore` |
+| **sync** | `createCloudSync`, `syncSetupFromEnv`, `checkSupabaseConfig`, `SupabaseSyncAdapter`, `createSyncEngine`, `InMemorySyncAdapter` (tests), workspace codes (`normalizeWorkspaceCode`, `buildJoinUrl`, `readJoinCode`), `SyncAdapter` and `SyncableStore` types, `createSyncStatusStore` |
 | **i18n** | `registerAppTranslations`, `setLanguage`, `useLanguage`, `useTranslation`, `LANGUAGES`, `i18n` |
 | **utils** | money: `formatPaisa`, `paisaFromRupees`, `parseWholeRupees` · phone: `validatePakistaniPhone`, `normalizePhone`, `formatPhone` · dates: `todayISO`, `toISODate`, `isValidISODate`, `formatDateDMY`, `addDays`, `daysBetween`, `weekRange`, `monthRange` · time: `formatTime`, `minutesBetween`, `localHour`, `isValidTimestamp` · text: `collapseSpaces`, `nameKey` · share: `toInternationalPk`, `whatsAppLink`, `smsLink` · CSV: `csvField`, `csvSafeText`, `csvLine`, `csvDocument`, `createCsvBlob`, `downloadBlob` · `singleFlight` · `toAsciiDigits` |
 | **hooks** | `useStoreSnapshot` (optional `pollMs`), `useSubmitGuard`, `useOnlineStatus`, `useNow` |
-| **ui** | `AppShell`, `BottomNav`, `ScreenHeader`, `Button`, `Card`, `StatCard`, `TextField`, `TextAreaField`, `ChoiceGroup`, `ConfirmDialog`, `EmptyState`, `FloatingActionButton`, `Notice`, `LoadingState`, `Spinner`, `ErrorBoundary`, `GroupedBarChart`, `SyncStatusBadge`, `LanguageToggle` |
+| **ui** | `AppShell`, `BottomNav`, `ScreenHeader`, `Button`, `Card`, `StatCard`, `TextField`, `TextAreaField`, `ChoiceGroup`, `SyncDevicesSection`, `QrCode`, `ConfirmDialog`, `EmptyState`, `FloatingActionButton`, `Notice`, `LoadingState`, `Spinner`, `ErrorBoundary`, `GroupedBarChart`, `SyncStatusBadge`, `LanguageToggle` |
 | **theme** | `src/theme.css`: brand colour tokens, bundled offline Urdu font, Urdu line-height, animations, reduced-motion support |
 
 ## Build a new app in six steps
@@ -56,15 +56,20 @@ Use `type` (not `interface`) so the generics resolve cleanly.
 ### 3. Create the database, store and sync engine
 
 ```ts
-import { createDatabase, createStore, createSyncEngine, getOrCreateDeviceId, InMemorySyncAdapter } from '@skeleton/core';
+import { createCloudSync, createDatabase, createStore, getOrCreateDeviceId, syncSetupFromEnv } from '@skeleton/core';
 
 export const db = createDatabase<AppCollections>({
   dbName: 'my-app',
   collections: { patientAdded: undefined, tokenIssued: undefined, tokenCancelled: undefined },
 });
 export const store = createStore(db, getOrCreateDeviceId());
-export const engine = createSyncEngine({ adapter: new InMemorySyncAdapter(), store });
+// Supabase when VITE_SUPABASE_URL + VITE_SUPABASE_PUBLISHABLE_KEY are set,
+// an in-memory stand-in under Vitest, otherwise local-only (badge "Local only").
+export const sync = createCloudSync({ app: 'my-app', store, ...syncSetupFromEnv(import.meta.env) });
+export const engine = sync.engine;
 ```
+
+Add a `.env.example` with both variables empty. In Settings, render `<SyncDevicesSection sync={...} />` with `sync.mode`, `sync.getWorkspaceId()`, `sync.getJoinUrl()` and `sync.joinWorkspace`, and open Settings when the app starts with a `#join=<code>` link (`readJoinCode(location.hash)`). On "Clear all data", call `sync.leaveWorkspace()`. The database side is in `supabase/migrations/` (see the root README).
 
 ### 4. Derive state with pure functions
 
@@ -132,6 +137,7 @@ All components are mobile-first, use **logical** Tailwind classes only (`ms-`, `
 | `StatCard` | A small figure with a label (counts on a dashboard). Tones `default`, `brand`, `success`, `warning`, `danger`, optional `hint`. |
 | `TextField`, `TextAreaField` | Labelled inputs with `error` / `hint` wired to `aria-describedby`. `size="lg"` gives the 56px amount field. |
 | `ChoiceGroup` | A native radio group drawn as large (48px) choice buttons. `allowDeselect` lets an optional choice be cleared. |
+| `SyncDevicesSection` | Settings "Sync devices": this device's sync code with Copy and a QR code (a `#join=` link), joining another code after a confirmation, or a "sync is not set up" note in local-only mode. All text translated. |
 | `ConfirmDialog` | "Are you sure?" dialogs. Focus starts on Cancel, Tab stays inside, Escape or a tap outside cancels, `tone="danger"` makes the confirm button red. |
 | `EmptyState` | Friendly "nothing here yet" with an action button. |
 | `FloatingActionButton` | The round `+` above the bottom navigation, on the right in English and the left in Urdu. |
@@ -173,4 +179,4 @@ singleFlight(store, () => loadDemo()); // one run at a time per key (double taps
 
 ## Tests
 
-From the repository root, `npm test` runs the skeleton suites alongside the apps': storage, the sync engine (including a property-based convergence test across three devices), i18n and RTL, the helpers (property-based), hooks, and every UI component (accessibility, touch targets, RTL classes, dialog focus handling, a chart that never draws NaN).
+From the repository root, `npm test` runs the skeleton suites alongside the apps': storage, the sync engine (including a property-based convergence test across three devices), the Supabase adapter against a fake server (properties: repeated pushes never duplicate, interrupted syncs never lose records, devices in one workspace converge) and the real SQL migration in PGlite, local-only mode, joining a workspace, i18n and RTL, the helpers (property-based), hooks, and every UI component (accessibility, touch targets, RTL classes, dialog focus handling, a chart that never draws NaN).

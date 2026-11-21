@@ -35,7 +35,8 @@ Khata has **no** storage, sync, i18n or network code of its own. Everything come
 | Khata needs | It uses |
 | --- | --- |
 | Local database and append-only records | `createDatabase`, `createStore` (`khata.db.ts`, `khata.store.ts`) |
-| Background sync, retry, offline status | `createSyncEngine`, `InMemorySyncAdapter`, `SyncStatusBadge` |
+| Background sync (Supabase or local-only), retry, offline status | `createCloudSync`, `syncSetupFromEnv`, `SyncStatusBadge` |
+| Pairing phones: sync code, QR, join | `SyncDevicesSection` |
 | Screens that refresh after writes and sync | `useStoreSnapshot` |
 | English / Urdu and right-to-left layout | `registerAppTranslations`, `useTranslation`, `setLanguage`, `useLanguage` |
 | Money, phone and date helpers | `formatPaisa`, `parseWholeRupees`, `formatPhone`, `validatePakistaniPhone`, `todayISO`, `weekRange`, `monthRange` |
@@ -106,5 +107,5 @@ Serve the production build on your network (`npm run preview --workspace=apps/kh
 
 ## Limits and next steps
 
-- **Sync is a mock.** `InMemorySyncAdapter` copies records within this browser session, so "Synced" does not yet mean backed up to a server. Until a real cloud adapter (for example Supabase) is added, the CSV download is the backup.
+- **Cloud sync is optional.** With `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in `.env.local` (see the [root README](../../README.md#cloud-sync-with-supabase-optional)), phones paired in **Settings → Sync devices** share their data through Supabase. Without them the app is local-only (badge "Local only") and the CSV download is the backup.
 - "Clear all data" deletes data on this phone only.
